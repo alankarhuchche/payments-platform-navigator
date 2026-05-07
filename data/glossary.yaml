@@ -1,0 +1,74 @@
+metadata:
+  classification: synthetic
+
+terms:
+  - term: pacs.008
+    definition: ISO 20022 customer credit transfer message used here for synthetic outbound customer payments.
+  - term: pacs.009
+    definition: ISO 20022 financial institution credit transfer message used here for synthetic FI movements.
+  - term: pacs.002
+    definition: ISO 20022 payment status report used here for synthetic acknowledgements and status outcomes.
+  - term: Debtor
+    definition: Party whose account is debited in a payment instruction.
+  - term: Creditor
+    definition: Party whose account is credited in a payment instruction.
+  - term: Debtor agent
+    definition: Financial institution acting for the debtor.
+  - term: Creditor agent
+    definition: Financial institution acting for the creditor.
+  - term: Correspondent banking
+    definition: Arrangement where one institution provides payment services through another institution.
+  - term: Settlement
+    definition: Final movement of value between financial institutions or their accounts.
+  - term: Cut-off time
+    definition: Latest time a payment can be accepted for a target processing window.
+  - term: Sanctions screening
+    definition: Checking parties and payment text against sanctions risk data.
+  - term: False positive
+    definition: Screening or validation match that requires review but is not ultimately a true issue.
+  - term: Payment repair
+    definition: Operations process for correcting invalid or incomplete payment data.
+  - term: Investigation
+    definition: Case-based review of a payment status, validation issue, screening hold, or operational exception.
+  - term: Idempotency key
+    definition: Client-provided key used to safely detect duplicate payment submissions.
+  - term: Route table
+    definition: Versioned rules that determine the rail, correspondent path, and settlement profile.
+  - term: Settlement profile
+    definition: Configuration describing settlement account, rail, priority, and operational constraints.
+  - term: Acknowledgement
+    definition: Confirmation from a network or boundary service that a message was accepted or rejected.
+  - term: Dead-letter queue
+    definition: Queue for events that could not be processed successfully after retries.
+  - term: Replay
+    definition: Controlled reprocessing of events or payments after an approved recovery decision.
+  - term: SLO
+    definition: Service level objective defining the target reliability or timeliness for a service.
+  - term: RTO
+    definition: Recovery time objective for restoring service after disruption.
+  - term: RPO
+    definition: Recovery point objective for acceptable data loss window.
+  - term: Four-eyes approval
+    definition: Control requiring a second authorised reviewer before sensitive action is completed.
+  - term: Change freeze
+    definition: Period when production changes are restricted to reduce operational risk.
+  - term: Contract test
+    definition: Test that verifies an API or event producer and consumer agree on schema and behaviour.
+  - term: End-to-end test
+    definition: Test that exercises a complete payment flow across multiple services.
+  - term: Golden path
+    definition: Preferred implementation and operating pattern for a common engineering task.
+  - term: Knowledge health
+    definition: Measure of documentation freshness, ownership clarity, test evidence, and operational readiness.
+  - term: Runbook
+    definition: Operational guide for diagnosing and recovering a known service or flow issue.
+  - term: Operational resilience
+    definition: Ability to prevent, absorb, recover from, and learn from disruption.
+  - term: Material change
+    definition: Change with meaningful customer, operational, regulatory, or platform risk.
+  - term: Synthetic data
+    definition: Fictional data created for demonstration and testing without real customer or bank information.
+  - term: ISO 20022
+    definition: Financial messaging standard used for structured payment messages.
+  - term: Cloud Run
+    definition: Managed container runtime used by this reference implementation.

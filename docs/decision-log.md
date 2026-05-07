@@ -1,41 +1,17 @@
 # Decision Log
 
-## 001 — Use a dedicated repository
+## 006 — Use connected synthetic data model for MVP
 
-Decision:
-Create a dedicated GitHub repository named `payments-platform-navigator`.
+Date: 2026-05-07
 
-Reason:
-This is a separate public portfolio project and should not be mixed with incident RCA, ISO address repair, or other experiments.
+Status: Accepted
 
-## 002 — Use synthetic data only
+Decision: The MVP will use a connected synthetic data model across services, payment flows, events, APIs, runbooks, incidents, change records, tests, glossary terms, onboarding paths, and knowledge-health metrics.
 
-Decision:
-All data in the repository will be synthetic.
+Rationale: The project needs to demonstrate role-based onboarding, dependency navigation, change-safety intelligence, and payments-aware assistant responses without using real bank information. A connected synthetic dataset lets the application behave like a practical payments platform navigator while remaining safe for a public repository.
 
-Reason:
-The project must be safe for public GitHub, LinkedIn, and resume use.
+Consequences:
 
-## 003 — Use file-based data for MVP
-
-Decision:
-Use YAML and JSON files for the first version.
-
-Reason:
-This keeps the MVP simple, transparent, and easy to run without database setup.
-
-## 004 — Use one Cloud Run container for MVP
-
-Decision:
-Serve the frontend and backend from a single container in the first version.
-
-Reason:
-This simplifies deployment and avoids unnecessary operational complexity.
-
-## 005 — Avoid external AI dependency in v0.1
-
-Decision:
-The first version will use deterministic, rule-based answers.
-
-Reason:
-The app should work without API keys, secrets, model cost, or hallucination risk.
+- All examples must remain fictional and must not include real bank names, internal systems, people, incidents, customer data, credentials, secrets, or confidential architecture.
+- IDs should remain stable and cross-referenceable so frontend and backend phases can traverse the model consistently.
+- Future data additions should preserve the same synthetic classification and relationship structure.

@@ -1,0 +1,393 @@
+metadata:
+  dataset: payments-platform-navigator
+  phase: "2"
+  classification: synthetic
+  note: "All services, owners, dependencies, risks, incidents, and examples are fictional."
+
+services:
+  - id: svc-payment-gateway
+    name: Payment Gateway
+    type: api-edge
+    domain: payment-initiation
+    lifecycle: production-reference
+    summary: Receives outbound payment instructions, normalises request envelopes, and starts platform orchestration.
+    owned_by: Synthetic Payments API Team
+    criticality: tier-0
+    runtime: Cloud Run
+    data_classification: synthetic-payment-instruction
+    upstream_services: []
+    downstream_services:
+      - svc-payment-validation
+      - svc-status-publisher
+    supports_flows:
+      - flow-outbound-pacs008
+      - flow-outbound-pacs009
+      - flow-payment-repair-investigation
+    publishes_events:
+      - payment.initiated
+    consumes_events:
+      - payment.status_updated
+      - payment.repaired
+    provides_apis:
+      - api-payment-submission
+    consumes_apis:
+      - api-payment-validation
+    runbooks:
+      - rb-payment-submission-latency
+      - rb-payment-replay
+    risks:
+      - id: risk-duplicate-submission
+        title: Duplicate client submission may create operational noise before idempotency is confirmed.
+        controls:
+          - Idempotency key required for every submission.
+          - Duplicate detection alerts visible to production support.
+    related_incidents:
+      - inc-2026-001
+    related_changes:
+      - chg-2026-001
+    tests:
+      - tc-payment-gateway-contract
+      - tc-outbound-pacs008-e2e
+      - tc-outbound-pacs009-e2e
+    knowledge_links:
+      - kh-payment-gateway
+
+  - id: svc-payment-validation
+    name: Payment Validation Service
+    type: domain-service
+    domain: validation
+    lifecycle: production-reference
+    summary: Applies syntactic, reference-data, cut-off, currency, and message-rule checks before screening and routing.
+    owned_by: Synthetic Payments Validation Team
+    criticality: tier-0
+    runtime: Cloud Run
+    data_classification: synthetic-payment-instruction
+    upstream_services:
+      - svc-payment-gateway
+      - svc-investigation-workbench
+    downstream_services:
+      - svc-sanctions-screening
+      - svc-routing-decision
+      - svc-status-publisher
+    supports_flows:
+      - flow-outbound-pacs008
+      - flow-outbound-pacs009
+      - flow-payment-repair-investigation
+    publishes_events:
+      - payment.validated
+      - payment.validation_failed
+    consumes_events:
+      - payment.initiated
+      - payment.repaired
+    provides_apis:
+      - api-payment-validation
+    consumes_apis:
+      - api-sanctions-screening
+      - api-routing-decision
+    runbooks:
+      - rb-validation-failure-spike
+    risks:
+      - id: risk-validation-rule-drift
+        title: Validation rules can drift from scheme rulebooks and create avoidable repair volume.
+        controls:
+          - Versioned rule packs.
+          - Regression tests for high-volume payment corridors.
+    related_incidents:
+      - inc-2026-002
+    related_changes:
+      - chg-2026-002
+      - chg-2026-006
+    tests:
+      - tc-validation-rules
+      - tc-payment-repair-e2e
+    knowledge_links:
+      - kh-payment-validation
+
+  - id: svc-sanctions-screening
+    name: Sanctions Screening Adapter
+    type: integration-adapter
+    domain: financial-crime
+    lifecycle: production-reference
+    summary: Sends synthetic payment parties for sanctions screening and records hold, case-created, and release outcomes.
+    owned_by: Synthetic Financial Crime Integration Team
+    criticality: tier-0
+    runtime: Cloud Run
+    data_classification: synthetic-party-and-payment-data
+    upstream_services:
+      - svc-payment-validation
+    downstream_services:
+      - svc-routing-decision
+      - svc-status-publisher
+      - svc-investigation-workbench
+    supports_flows:
+      - flow-outbound-pacs008
+      - flow-outbound-pacs009
+      - flow-sanctions-hold-release
+    publishes_events:
+      - sanctions.screening_requested
+      - sanctions.case_created
+      - sanctions.payment_released
+    consumes_events:
+      - payment.validated
+      - investigation.case_opened
+    provides_apis:
+      - api-sanctions-screening
+    consumes_apis:
+      - api-investigation-case
+    runbooks:
+      - rb-sanctions-queue-growth
+      - rb-sanctions-release-delay
+    risks:
+      - id: risk-screening-timeout
+        title: Screening timeout can delay routing and status publication.
+        controls:
+          - Timeout budgets per flow.
+          - Hold-and-resume pattern for uncertain screening outcomes.
+    related_incidents:
+      - inc-2026-003
+    related_changes:
+      - chg-2026-003
+    tests:
+      - tc-sanctions-hold-release
+      - tc-sanctions-contract
+    knowledge_links:
+      - kh-sanctions-screening
+
+  - id: svc-routing-decision
+    name: Routing Decision Service
+    type: domain-service
+    domain: routing
+    lifecycle: production-reference
+    summary: Selects the synthetic payment rail, correspondent route, and settlement profile for validated and released payments.
+    owned_by: Synthetic Payments Routing Team
+    criticality: tier-0
+    runtime: Cloud Run
+    data_classification: synthetic-routing-metadata
+    upstream_services:
+      - svc-payment-validation
+      - svc-sanctions-screening
+    downstream_services:
+      - svc-swift-connector
+      - svc-status-publisher
+    supports_flows:
+      - flow-outbound-pacs008
+      - flow-outbound-pacs009
+      - flow-sanctions-hold-release
+    publishes_events:
+      - routing.decision_completed
+    consumes_events:
+      - payment.validated
+      - sanctions.payment_released
+    provides_apis:
+      - api-routing-decision
+    consumes_apis:
+      - api-swift-submission
+    runbooks:
+      - rb-routing-decision-errors
+    risks:
+      - id: risk-route-misclassification
+        title: Incorrect route selection may send a payment to the wrong synthetic clearing path.
+        controls:
+          - Dual-control route-table changes.
+          - Shadow evaluation before route activation.
+    related_incidents:
+      - inc-2026-004
+    related_changes:
+      - chg-2026-004
+    tests:
+      - tc-routing-decision-matrix
+      - tc-outbound-pacs009-e2e
+    knowledge_links:
+      - kh-routing-decision
+
+  - id: svc-swift-connector
+    name: SWIFT Connector
+    type: integration-adapter
+    domain: external-messaging
+    lifecycle: production-reference
+    summary: Builds synthetic ISO 20022 SWIFT messages, submits them to a simulated network boundary, and captures acknowledgements.
+    owned_by: Synthetic Network Connectivity Team
+    criticality: tier-0
+    runtime: Cloud Run
+    data_classification: synthetic-payment-message
+    upstream_services:
+      - svc-routing-decision
+    downstream_services:
+      - svc-status-publisher
+      - svc-data-lake-publisher
+    supports_flows:
+      - flow-outbound-pacs008
+      - flow-outbound-pacs009
+      - flow-inbound-status-update
+    publishes_events:
+      - swift.message_submitted
+      - swift.ack_received
+    consumes_events:
+      - routing.decision_completed
+    provides_apis:
+      - api-swift-submission
+    consumes_apis: []
+    runbooks:
+      - rb-swift-ack-delay
+    risks:
+      - id: risk-acknowledgement-gap
+        title: Missing acknowledgement may leave payment state uncertain.
+        controls:
+          - Ack reconciliation job.
+          - Manual investigation handoff after defined ageing threshold.
+    related_incidents:
+      - inc-2026-005
+    related_changes:
+      - chg-2026-005
+    tests:
+      - tc-swift-message-contract
+      - tc-inbound-status-e2e
+    knowledge_links:
+      - kh-swift-connector
+
+  - id: svc-status-publisher
+    name: Status Publisher
+    type: platform-service
+    domain: status-and-notification
+    lifecycle: production-reference
+    summary: Converts platform outcomes into consistent payment status events for channels, operations, and analytics.
+    owned_by: Synthetic Payments Observability Team
+    criticality: tier-1
+    runtime: Cloud Run
+    data_classification: synthetic-payment-status
+    upstream_services:
+      - svc-payment-gateway
+      - svc-payment-validation
+      - svc-sanctions-screening
+      - svc-routing-decision
+      - svc-swift-connector
+      - svc-investigation-workbench
+    downstream_services:
+      - svc-data-lake-publisher
+    supports_flows:
+      - flow-outbound-pacs008
+      - flow-outbound-pacs009
+      - flow-inbound-status-update
+      - flow-sanctions-hold-release
+      - flow-payment-repair-investigation
+    publishes_events:
+      - payment.status_updated
+    consumes_events:
+      - payment.initiated
+      - payment.validation_failed
+      - sanctions.case_created
+      - sanctions.payment_released
+      - swift.ack_received
+      - payment.repaired
+    provides_apis: []
+    consumes_apis: []
+    runbooks:
+      - rb-status-publication-lag
+    risks:
+      - id: risk-status-lag
+        title: Delayed status events reduce operational transparency and customer-channel accuracy.
+        controls:
+          - Status lag SLO.
+          - Dead-letter queue replay procedure.
+    related_incidents:
+      - inc-2026-006
+    related_changes:
+      - chg-2026-006
+    tests:
+      - tc-status-publication
+      - tc-inbound-status-e2e
+    knowledge_links:
+      - kh-status-publisher
+
+  - id: svc-investigation-workbench
+    name: Investigation Workbench
+    type: operations-ui
+    domain: repair-and-investigation
+    lifecycle: production-reference
+    summary: Provides synthetic operations workflows for sanctions cases, payment repair, investigation notes, and release decisions.
+    owned_by: Synthetic Payments Operations Tooling Team
+    criticality: tier-1
+    runtime: Cloud Run
+    data_classification: synthetic-operations-case-data
+    upstream_services:
+      - svc-sanctions-screening
+      - svc-status-publisher
+    downstream_services:
+      - svc-payment-validation
+      - svc-status-publisher
+    supports_flows:
+      - flow-sanctions-hold-release
+      - flow-payment-repair-investigation
+    publishes_events:
+      - investigation.case_opened
+      - payment.repaired
+    consumes_events:
+      - sanctions.case_created
+      - payment.validation_failed
+      - payment.status_updated
+    provides_apis:
+      - api-investigation-case
+    consumes_apis:
+      - api-payment-validation
+    runbooks:
+      - rb-investigation-backlog
+    risks:
+      - id: risk-repair-quality
+        title: Poor repair data can cause repeated validation failure.
+        controls:
+          - Mandatory reason codes.
+          - Four-eyes approval for material party or amount correction.
+    related_incidents:
+      - inc-2026-007
+    related_changes:
+      - chg-2026-007
+    tests:
+      - tc-payment-repair-e2e
+      - tc-investigation-case-api
+    knowledge_links:
+      - kh-investigation-workbench
+
+  - id: svc-data-lake-publisher
+    name: Data Lake Publisher
+    type: analytics-publisher
+    domain: data-and-reporting
+    lifecycle: production-reference
+    summary: Publishes sanitised synthetic payment events into analytical zones for reporting, service insights, and knowledge-health metrics.
+    owned_by: Synthetic Payments Data Team
+    criticality: tier-2
+    runtime: Cloud Run
+    data_classification: synthetic-analytics-event
+    upstream_services:
+      - svc-swift-connector
+      - svc-status-publisher
+    downstream_services: []
+    supports_flows:
+      - flow-outbound-pacs008
+      - flow-outbound-pacs009
+      - flow-inbound-status-update
+      - flow-sanctions-hold-release
+      - flow-payment-repair-investigation
+    publishes_events: []
+    consumes_events:
+      - swift.message_submitted
+      - swift.ack_received
+      - payment.status_updated
+    provides_apis: []
+    consumes_apis: []
+    runbooks:
+      - rb-data-lake-publish-delay
+    risks:
+      - id: risk-analytics-staleness
+        title: Delayed analytics publication may hide trend signals from leadership dashboards.
+        controls:
+          - Freshness SLO.
+          - Reconciliation against event stream offsets.
+    related_incidents:
+      - inc-2026-008
+    related_changes:
+      - chg-2026-008
+    tests:
+      - tc-data-lake-publication
+      - tc-knowledge-health-metrics
+    knowledge_links:
+      - kh-data-lake-publisher

@@ -1,0 +1,251 @@
+metadata:
+  classification: synthetic
+  note: "All flow examples use fictional parties, accounts, identifiers, and outcomes."
+
+flows:
+  - id: flow-outbound-pacs008
+    name: Outbound SWIFT pacs.008 customer credit transfer
+    message_type: pacs.008
+    direction: outbound
+    business_purpose: Customer credit transfer from a synthetic digital channel to an overseas beneficiary.
+    entry_service: svc-payment-gateway
+    services:
+      - svc-payment-gateway
+      - svc-payment-validation
+      - svc-sanctions-screening
+      - svc-routing-decision
+      - svc-swift-connector
+      - svc-status-publisher
+      - svc-data-lake-publisher
+    events:
+      - payment.initiated
+      - payment.validated
+      - sanctions.screening_requested
+      - routing.decision_completed
+      - swift.message_submitted
+      - swift.ack_received
+      - payment.status_updated
+    apis:
+      - api-payment-submission
+      - api-payment-validation
+      - api-sanctions-screening
+      - api-routing-decision
+      - api-swift-submission
+    runbooks:
+      - rb-payment-submission-latency
+      - rb-swift-ack-delay
+      - rb-status-publication-lag
+    tests:
+      - tc-outbound-pacs008-e2e
+      - tc-payment-gateway-contract
+      - tc-swift-message-contract
+    risks:
+      - risk-duplicate-submission
+      - risk-screening-timeout
+      - risk-acknowledgement-gap
+    happy_path:
+      - step: 1
+        service: svc-payment-gateway
+        action: Accept synthetic payment request and publish payment.initiated.
+      - step: 2
+        service: svc-payment-validation
+        action: Validate pacs.008 mandatory fields, currency, cut-off, and party structure.
+      - step: 3
+        service: svc-sanctions-screening
+        action: Screen debtor, creditor, agents, and remittance text.
+      - step: 4
+        service: svc-routing-decision
+        action: Select SWIFT route and settlement profile.
+      - step: 5
+        service: svc-swift-connector
+        action: Submit synthetic pacs.008 and receive network acknowledgement.
+      - step: 6
+        service: svc-status-publisher
+        action: Publish accepted and submitted statuses.
+    synthetic_example:
+      payment_id: pay-syn-008-0001
+      instructed_amount: "12500.00"
+      currency: GBP
+      debtor_country: GB
+      creditor_country: NL
+
+  - id: flow-outbound-pacs009
+    name: Outbound SWIFT pacs.009 financial institution transfer
+    message_type: pacs.009
+    direction: outbound
+    business_purpose: Financial institution transfer for a synthetic liquidity movement between correspondent accounts.
+    entry_service: svc-payment-gateway
+    services:
+      - svc-payment-gateway
+      - svc-payment-validation
+      - svc-sanctions-screening
+      - svc-routing-decision
+      - svc-swift-connector
+      - svc-status-publisher
+      - svc-data-lake-publisher
+    events:
+      - payment.initiated
+      - payment.validated
+      - sanctions.screening_requested
+      - routing.decision_completed
+      - swift.message_submitted
+      - swift.ack_received
+      - payment.status_updated
+    apis:
+      - api-payment-submission
+      - api-payment-validation
+      - api-sanctions-screening
+      - api-routing-decision
+      - api-swift-submission
+    runbooks:
+      - rb-validation-failure-spike
+      - rb-routing-decision-errors
+      - rb-swift-ack-delay
+    tests:
+      - tc-outbound-pacs009-e2e
+      - tc-routing-decision-matrix
+    risks:
+      - risk-validation-rule-drift
+      - risk-route-misclassification
+      - risk-acknowledgement-gap
+    happy_path:
+      - step: 1
+        service: svc-payment-gateway
+        action: Accept synthetic FI transfer and record idempotency key.
+      - step: 2
+        service: svc-payment-validation
+        action: Validate pacs.009 settlement method, agents, and cover indicators.
+      - step: 3
+        service: svc-routing-decision
+        action: Select correspondent route and settlement account.
+      - step: 4
+        service: svc-swift-connector
+        action: Submit synthetic pacs.009 and capture acknowledgement.
+    synthetic_example:
+      payment_id: pay-syn-009-0001
+      instructed_amount: "2500000.00"
+      currency: EUR
+      debtor_agent_country: GB
+      creditor_agent_country: DE
+
+  - id: flow-inbound-status-update
+    name: Inbound payment status update
+    message_type: pacs.002
+    direction: inbound
+    business_purpose: Process synthetic network acknowledgement or status update and publish platform state.
+    entry_service: svc-swift-connector
+    services:
+      - svc-swift-connector
+      - svc-status-publisher
+      - svc-data-lake-publisher
+    events:
+      - swift.ack_received
+      - payment.status_updated
+    apis: []
+    runbooks:
+      - rb-swift-ack-delay
+      - rb-status-publication-lag
+      - rb-data-lake-publish-delay
+    tests:
+      - tc-inbound-status-e2e
+      - tc-status-publication
+    risks:
+      - risk-acknowledgement-gap
+      - risk-status-lag
+      - risk-analytics-staleness
+    happy_path:
+      - step: 1
+        service: svc-swift-connector
+        action: Receive synthetic ack and correlate it to payment instruction.
+      - step: 2
+        service: svc-status-publisher
+        action: Publish normalised payment status update.
+      - step: 3
+        service: svc-data-lake-publisher
+        action: Publish status event into synthetic analytical zone.
+
+  - id: flow-sanctions-hold-release
+    name: Sanctions hold and release
+    message_type: platform-case-flow
+    direction: internal
+    business_purpose: Hold a screened payment, open a synthetic operations case, and release after review.
+    entry_service: svc-sanctions-screening
+    services:
+      - svc-sanctions-screening
+      - svc-investigation-workbench
+      - svc-routing-decision
+      - svc-status-publisher
+      - svc-data-lake-publisher
+    events:
+      - sanctions.case_created
+      - investigation.case_opened
+      - sanctions.payment_released
+      - routing.decision_completed
+      - payment.status_updated
+    apis:
+      - api-sanctions-screening
+      - api-investigation-case
+      - api-routing-decision
+    runbooks:
+      - rb-sanctions-queue-growth
+      - rb-sanctions-release-delay
+      - rb-investigation-backlog
+    tests:
+      - tc-sanctions-hold-release
+      - tc-investigation-case-api
+    risks:
+      - risk-screening-timeout
+      - risk-status-lag
+    happy_path:
+      - step: 1
+        service: svc-sanctions-screening
+        action: Create synthetic case for a potential name match.
+      - step: 2
+        service: svc-investigation-workbench
+        action: Record operations review and release decision.
+      - step: 3
+        service: svc-routing-decision
+        action: Resume route selection after release.
+
+  - id: flow-payment-repair-investigation
+    name: Payment repair and investigation
+    message_type: platform-repair-flow
+    direction: internal
+    business_purpose: Repair a validation-failed synthetic payment and resubmit it to validation.
+    entry_service: svc-payment-validation
+    services:
+      - svc-payment-validation
+      - svc-status-publisher
+      - svc-investigation-workbench
+      - svc-payment-gateway
+      - svc-data-lake-publisher
+    events:
+      - payment.validation_failed
+      - payment.status_updated
+      - investigation.case_opened
+      - payment.repaired
+      - payment.validated
+    apis:
+      - api-payment-validation
+      - api-investigation-case
+    runbooks:
+      - rb-validation-failure-spike
+      - rb-investigation-backlog
+      - rb-payment-replay
+    tests:
+      - tc-payment-repair-e2e
+      - tc-validation-rules
+    risks:
+      - risk-validation-rule-drift
+      - risk-repair-quality
+      - risk-status-lag
+    happy_path:
+      - step: 1
+        service: svc-payment-validation
+        action: Reject invalid synthetic instruction and publish validation failure.
+      - step: 2
+        service: svc-investigation-workbench
+        action: Open repair case and capture corrected fields.
+      - step: 3
+        service: svc-payment-validation
+        action: Revalidate repaired payment and publish payment.validated.

@@ -1,0 +1,175 @@
+{
+  "metadata": {
+    "classification": "synthetic",
+    "generated_at": "2026-05-07T00:00:00Z"
+  },
+  "summary": {
+    "overall_coverage_percent": 84,
+    "contract_coverage_percent": 88,
+    "flow_coverage_percent": 82,
+    "operational_runbook_coverage_percent": 90,
+    "known_gaps": 4
+  },
+  "tests": [
+    {
+      "id": "tc-payment-gateway-contract",
+      "name": "Payment Gateway submission contract",
+      "type": "contract",
+      "status": "passing",
+      "coverage_percent": 92,
+      "services": ["svc-payment-gateway"],
+      "flows": ["flow-outbound-pacs008", "flow-outbound-pacs009"],
+      "apis": ["api-payment-submission"],
+      "events": ["payment.initiated"]
+    },
+    {
+      "id": "tc-outbound-pacs008-e2e",
+      "name": "Outbound pacs.008 end-to-end flow",
+      "type": "end-to-end",
+      "status": "passing",
+      "coverage_percent": 86,
+      "services": ["svc-payment-gateway", "svc-payment-validation", "svc-sanctions-screening", "svc-routing-decision", "svc-swift-connector", "svc-status-publisher"],
+      "flows": ["flow-outbound-pacs008"],
+      "apis": ["api-payment-submission", "api-payment-validation", "api-routing-decision", "api-swift-submission"],
+      "events": ["payment.initiated", "payment.validated", "routing.decision_completed", "swift.message_submitted", "swift.ack_received", "payment.status_updated"]
+    },
+    {
+      "id": "tc-outbound-pacs009-e2e",
+      "name": "Outbound pacs.009 end-to-end flow",
+      "type": "end-to-end",
+      "status": "passing",
+      "coverage_percent": 81,
+      "services": ["svc-payment-gateway", "svc-payment-validation", "svc-routing-decision", "svc-swift-connector"],
+      "flows": ["flow-outbound-pacs009"],
+      "apis": ["api-payment-submission", "api-payment-validation", "api-routing-decision", "api-swift-submission"],
+      "events": ["payment.initiated", "payment.validated", "routing.decision_completed", "swift.message_submitted"]
+    },
+    {
+      "id": "tc-validation-rules",
+      "name": "Validation rule-pack regression",
+      "type": "component",
+      "status": "passing",
+      "coverage_percent": 89,
+      "services": ["svc-payment-validation"],
+      "flows": ["flow-outbound-pacs008", "flow-outbound-pacs009", "flow-payment-repair-investigation"],
+      "apis": ["api-payment-validation"],
+      "events": ["payment.validated", "payment.validation_failed"]
+    },
+    {
+      "id": "tc-sanctions-contract",
+      "name": "Sanctions screening adapter contract",
+      "type": "contract",
+      "status": "passing",
+      "coverage_percent": 83,
+      "services": ["svc-sanctions-screening"],
+      "flows": ["flow-sanctions-hold-release"],
+      "apis": ["api-sanctions-screening"],
+      "events": ["sanctions.screening_requested", "sanctions.case_created", "sanctions.payment_released"]
+    },
+    {
+      "id": "tc-sanctions-hold-release",
+      "name": "Sanctions hold and release journey",
+      "type": "end-to-end",
+      "status": "passing",
+      "coverage_percent": 78,
+      "services": ["svc-sanctions-screening", "svc-investigation-workbench", "svc-routing-decision", "svc-status-publisher"],
+      "flows": ["flow-sanctions-hold-release"],
+      "apis": ["api-sanctions-screening", "api-investigation-case", "api-routing-decision"],
+      "events": ["sanctions.case_created", "investigation.case_opened", "sanctions.payment_released", "routing.decision_completed", "payment.status_updated"]
+    },
+    {
+      "id": "tc-routing-decision-matrix",
+      "name": "Routing decision matrix coverage",
+      "type": "component",
+      "status": "passing",
+      "coverage_percent": 87,
+      "services": ["svc-routing-decision"],
+      "flows": ["flow-outbound-pacs008", "flow-outbound-pacs009"],
+      "apis": ["api-routing-decision"],
+      "events": ["routing.decision_completed"]
+    },
+    {
+      "id": "tc-swift-message-contract",
+      "name": "SWIFT message submission contract",
+      "type": "contract",
+      "status": "passing",
+      "coverage_percent": 85,
+      "services": ["svc-swift-connector"],
+      "flows": ["flow-outbound-pacs008", "flow-outbound-pacs009"],
+      "apis": ["api-swift-submission"],
+      "events": ["swift.message_submitted", "swift.ack_received"]
+    },
+    {
+      "id": "tc-inbound-status-e2e",
+      "name": "Inbound status update end-to-end flow",
+      "type": "end-to-end",
+      "status": "passing",
+      "coverage_percent": 80,
+      "services": ["svc-swift-connector", "svc-status-publisher", "svc-data-lake-publisher"],
+      "flows": ["flow-inbound-status-update"],
+      "apis": [],
+      "events": ["swift.ack_received", "payment.status_updated"]
+    },
+    {
+      "id": "tc-status-publication",
+      "name": "Status publication mapping",
+      "type": "component",
+      "status": "passing",
+      "coverage_percent": 88,
+      "services": ["svc-status-publisher"],
+      "flows": ["flow-inbound-status-update", "flow-payment-repair-investigation", "flow-sanctions-hold-release"],
+      "apis": [],
+      "events": ["payment.status_updated"]
+    },
+    {
+      "id": "tc-payment-repair-e2e",
+      "name": "Payment repair and investigation end-to-end flow",
+      "type": "end-to-end",
+      "status": "passing",
+      "coverage_percent": 77,
+      "services": ["svc-payment-validation", "svc-investigation-workbench", "svc-status-publisher"],
+      "flows": ["flow-payment-repair-investigation"],
+      "apis": ["api-payment-validation", "api-investigation-case"],
+      "events": ["payment.validation_failed", "investigation.case_opened", "payment.repaired", "payment.validated"]
+    },
+    {
+      "id": "tc-investigation-case-api",
+      "name": "Investigation case API contract",
+      "type": "contract",
+      "status": "passing",
+      "coverage_percent": 84,
+      "services": ["svc-investigation-workbench"],
+      "flows": ["flow-sanctions-hold-release", "flow-payment-repair-investigation"],
+      "apis": ["api-investigation-case"],
+      "events": ["investigation.case_opened", "payment.repaired"]
+    },
+    {
+      "id": "tc-data-lake-publication",
+      "name": "Data lake publication freshness",
+      "type": "integration",
+      "status": "passing",
+      "coverage_percent": 79,
+      "services": ["svc-data-lake-publisher"],
+      "flows": ["flow-inbound-status-update", "flow-sanctions-hold-release"],
+      "apis": [],
+      "events": ["swift.message_submitted", "swift.ack_received", "payment.status_updated"]
+    },
+    {
+      "id": "tc-knowledge-health-metrics",
+      "name": "Knowledge-health metric calculation",
+      "type": "component",
+      "status": "passing",
+      "coverage_percent": 90,
+      "services": ["svc-data-lake-publisher"],
+      "flows": ["flow-outbound-pacs008", "flow-outbound-pacs009", "flow-inbound-status-update", "flow-sanctions-hold-release", "flow-payment-repair-investigation"],
+      "apis": [],
+      "events": ["payment.status_updated"]
+    }
+  ],
+  "gaps": [
+    {"id": "gap-001", "area": "Sanctions negative-path permutations", "priority": "medium", "related_services": ["svc-sanctions-screening"]},
+    {"id": "gap-002", "area": "pacs.009 cover-payment edge cases", "priority": "medium", "related_services": ["svc-payment-validation", "svc-swift-connector"]},
+    {"id": "gap-003", "area": "Replay approval audit export", "priority": "low", "related_services": ["svc-payment-gateway", "svc-investigation-workbench"]},
+    {"id": "gap-004", "area": "Analytics backfill at high event volume", "priority": "low", "related_services": ["svc-data-lake-publisher"]}
+  ]
+}

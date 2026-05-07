@@ -1,0 +1,98 @@
+metadata:
+  classification: synthetic
+
+paths:
+  - id: onboard-backend-engineer
+    role: Backend engineer
+    goal: Become productive changing payment APIs, events, validation rules, and service integrations.
+    recommended_starting_services: [svc-payment-gateway, svc-payment-validation, svc-routing-decision]
+    primary_flows: [flow-outbound-pacs008, flow-outbound-pacs009]
+    modules:
+      - id: be-001
+        title: Platform shape and payment lifecycle
+        resources: [flow-outbound-pacs008, flow-outbound-pacs009, payment.initiated, payment.status_updated]
+        completion_signal: Can explain how a submitted payment becomes a SWIFT message and status update.
+      - id: be-002
+        title: API and event contracts
+        resources: [api-payment-submission, api-payment-validation, api-routing-decision, payment.validated, routing.decision_completed]
+        completion_signal: Can identify contract tests needed for an API or event change.
+      - id: be-003
+        title: Change-safety checklist
+        resources: [chg-2026-001, chg-2026-002, chg-2026-004, rb-validation-failure-spike]
+        completion_signal: Can prepare a low-risk change plan with rollback and monitoring.
+
+  - id: onboard-test-engineer
+    role: Test engineer
+    goal: Understand flow coverage, contract boundaries, regression packs, and known test gaps.
+    recommended_starting_services: [svc-payment-validation, svc-swift-connector, svc-status-publisher]
+    primary_flows: [flow-outbound-pacs008, flow-outbound-pacs009, flow-sanctions-hold-release, flow-payment-repair-investigation]
+    modules:
+      - id: te-001
+        title: Flow-based test design
+        resources: [tc-outbound-pacs008-e2e, tc-outbound-pacs009-e2e, tc-sanctions-hold-release, tc-payment-repair-e2e]
+        completion_signal: Can map a payment-flow step to the required test type.
+      - id: te-002
+        title: Contract and schema evidence
+        resources: [api-payment-validation, api-swift-submission, tc-swift-message-contract, tc-sanctions-contract]
+        completion_signal: Can identify producer and consumer coverage for a schema change.
+      - id: te-003
+        title: Risk-based regression selection
+        resources: [chg-2026-002, chg-2026-005, inc-2026-002, inc-2026-005]
+        completion_signal: Can choose regression tests for a high-risk payments change.
+
+  - id: onboard-production-support-engineer
+    role: Production support engineer
+    goal: Diagnose synthetic payment incidents using service ownership, flow state, runbooks, and event evidence.
+    recommended_starting_services: [svc-status-publisher, svc-swift-connector, svc-investigation-workbench]
+    primary_flows: [flow-inbound-status-update, flow-sanctions-hold-release, flow-payment-repair-investigation]
+    modules:
+      - id: ps-001
+        title: Operational event trail
+        resources: [payment.status_updated, swift.ack_received, sanctions.case_created, investigation.case_opened]
+        completion_signal: Can reconstruct a payment timeline from platform events.
+      - id: ps-002
+        title: Runbook execution
+        resources: [rb-swift-ack-delay, rb-status-publication-lag, rb-investigation-backlog, rb-data-lake-publish-delay]
+        completion_signal: Can choose the right runbook for common symptoms.
+      - id: ps-003
+        title: Incident learning
+        resources: [inc-2026-003, inc-2026-005, inc-2026-006, inc-2026-007]
+        completion_signal: Can summarise customer, operational, and data-dashboard impact.
+
+  - id: onboard-engineering-lead
+    role: Engineering lead
+    goal: Make informed delivery, risk, resilience, and knowledge-health decisions across the synthetic platform.
+    recommended_starting_services: [svc-payment-gateway, svc-payment-validation, svc-status-publisher, svc-data-lake-publisher]
+    primary_flows: [flow-outbound-pacs008, flow-outbound-pacs009, flow-inbound-status-update]
+    modules:
+      - id: el-001
+        title: Service criticality and ownership
+        resources: [svc-payment-gateway, svc-payment-validation, svc-swift-connector, svc-status-publisher]
+        completion_signal: Can identify tier-0 services and accountable synthetic teams.
+      - id: el-002
+        title: Change portfolio risk
+        resources: [chg-2026-002, chg-2026-004, chg-2026-005, chg-2026-008]
+        completion_signal: Can challenge readiness for high-risk changes.
+      - id: el-003
+        title: Executive knowledge health
+        resources: [kh-payment-gateway, kh-payment-validation, kh-status-publisher, kh-data-lake-publisher]
+        completion_signal: Can interpret dashboard signals and assign improvement actions.
+
+  - id: onboard-solution-architect
+    role: Solution architect
+    goal: Understand service boundaries, integration contracts, dependency paths, and architectural change impacts.
+    recommended_starting_services: [svc-routing-decision, svc-swift-connector, svc-sanctions-screening, svc-data-lake-publisher]
+    primary_flows: [flow-outbound-pacs008, flow-outbound-pacs009, flow-sanctions-hold-release]
+    modules:
+      - id: sa-001
+        title: Dependency map and service boundaries
+        resources: [svc-payment-gateway, svc-payment-validation, svc-sanctions-screening, svc-routing-decision, svc-swift-connector]
+        completion_signal: Can explain upstream and downstream impact of a service change.
+      - id: sa-002
+        title: Integration contract design
+        resources: [api-sanctions-screening, api-routing-decision, api-swift-submission, sanctions.payment_released]
+        completion_signal: Can reason about API and event boundary trade-offs.
+      - id: sa-003
+        title: Resilience and data considerations
+        resources: [rb-swift-ack-delay, rb-data-lake-publish-delay, risk-acknowledgement-gap, risk-analytics-staleness]
+        completion_signal: Can identify resilience controls and reporting dependencies.

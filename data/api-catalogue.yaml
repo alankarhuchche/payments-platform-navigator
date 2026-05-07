@@ -1,0 +1,103 @@
+metadata:
+  classification: synthetic
+  schema_version: "1.0"
+
+apis:
+  - id: api-payment-submission
+    name: Payment Submission API
+    version: v1
+    style: REST
+    owner_service: svc-payment-gateway
+    consumers: [synthetic-channel-adapter, synthetic-operations-replay]
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009]
+    endpoints:
+      - method: POST
+        path: /payments
+        purpose: Submit a synthetic outbound payment instruction.
+    request_fields: [idempotency_key, message_type, debtor, creditor, agents, instructed_amount, currency, requested_execution_date]
+    response_fields: [payment_id, submission_status, links]
+    related_events: [payment.initiated]
+    runbooks: [rb-payment-submission-latency]
+
+  - id: api-payment-validation
+    name: Payment Validation API
+    version: v1
+    style: REST
+    owner_service: svc-payment-validation
+    consumers: [svc-payment-gateway, svc-investigation-workbench]
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009, flow-payment-repair-investigation]
+    endpoints:
+      - method: POST
+        path: /validation/checks
+        purpose: Validate synthetic payment instruction against rule pack.
+    request_fields: [payment_id, message_type, party_data, amount, currency, rule_pack_version]
+    response_fields: [payment_id, validation_status, failure_codes, repair_required]
+    related_events: [payment.validated, payment.validation_failed]
+    runbooks: [rb-validation-failure-spike]
+
+  - id: api-sanctions-screening
+    name: Sanctions Screening API
+    version: v1
+    style: REST
+    owner_service: svc-sanctions-screening
+    consumers: [svc-payment-validation]
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009, flow-sanctions-hold-release]
+    endpoints:
+      - method: POST
+        path: /screening/requests
+        purpose: Submit synthetic parties and payment narrative for screening.
+    request_fields: [payment_id, parties, remittance_information, priority]
+    response_fields: [screening_request_id, screening_status, case_id]
+    related_events: [sanctions.screening_requested, sanctions.case_created, sanctions.payment_released]
+    runbooks: [rb-sanctions-queue-growth, rb-sanctions-release-delay]
+
+  - id: api-routing-decision
+    name: Routing Decision API
+    version: v1
+    style: REST
+    owner_service: svc-routing-decision
+    consumers: [svc-payment-validation, svc-sanctions-screening]
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009, flow-sanctions-hold-release]
+    endpoints:
+      - method: POST
+        path: /routing/decisions
+        purpose: Select synthetic route and settlement profile.
+    request_fields: [payment_id, message_type, currency, amount_band, debtor_agent, creditor_agent, screening_status]
+    response_fields: [route_id, rail, settlement_profile, decision_reason]
+    related_events: [routing.decision_completed]
+    runbooks: [rb-routing-decision-errors]
+
+  - id: api-swift-submission
+    name: SWIFT Submission API
+    version: v1
+    style: REST
+    owner_service: svc-swift-connector
+    consumers: [svc-routing-decision]
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009]
+    endpoints:
+      - method: POST
+        path: /swift/messages
+        purpose: Submit a synthetic ISO 20022 message to a simulated network boundary.
+    request_fields: [payment_id, route_id, message_type, iso20022_payload, settlement_profile]
+    response_fields: [network_message_id, submission_status, accepted_at]
+    related_events: [swift.message_submitted, swift.ack_received]
+    runbooks: [rb-swift-ack-delay]
+
+  - id: api-investigation-case
+    name: Investigation Case API
+    version: v1
+    style: REST
+    owner_service: svc-investigation-workbench
+    consumers: [svc-sanctions-screening, synthetic-operations-ui]
+    related_flows: [flow-sanctions-hold-release, flow-payment-repair-investigation]
+    endpoints:
+      - method: POST
+        path: /investigations/cases
+        purpose: Open a synthetic investigation or repair case.
+      - method: PATCH
+        path: /investigations/cases/{case_id}
+        purpose: Update case decision, repair fields, or release reason.
+    request_fields: [payment_id, case_type, priority, reason_code, proposed_updates]
+    response_fields: [case_id, case_status, assigned_queue, updated_at]
+    related_events: [investigation.case_opened, payment.repaired]
+    runbooks: [rb-investigation-backlog]

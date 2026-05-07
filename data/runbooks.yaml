@@ -1,0 +1,113 @@
+metadata:
+  classification: synthetic
+
+runbooks:
+  - id: rb-payment-submission-latency
+    title: Payment submission latency
+    owner_service: svc-payment-gateway
+    severity_guidance: P2 when p95 exceeds 900ms for 15 minutes; P1 when submissions are rejected across multiple flows.
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009]
+    signals: [api-payment-submission p95 latency, payment.initiated rate, idempotency conflict count]
+    first_actions:
+      - Check Cloud Run revision health and recent deployments.
+      - Compare submission volume with synthetic baseline.
+      - Confirm downstream validation API availability.
+
+  - id: rb-payment-replay
+    title: Controlled payment replay
+    owner_service: svc-payment-gateway
+    severity_guidance: Use for approved synthetic recovery only.
+    related_flows: [flow-payment-repair-investigation]
+    signals: [payment.status_updated gaps, replay approval record, duplicate detection alerts]
+    first_actions:
+      - Confirm replay scope and idempotency keys.
+      - Replay a small batch and validate downstream event sequence.
+      - Record synthetic audit note in investigation case.
+
+  - id: rb-validation-failure-spike
+    title: Validation failure spike
+    owner_service: svc-payment-validation
+    severity_guidance: P2 for corridor-specific spikes; P1 if all outbound validation fails.
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009, flow-payment-repair-investigation]
+    signals: [payment.validation_failed rate, rule_pack_version, repair queue depth]
+    first_actions:
+      - Identify top failure codes and affected message type.
+      - Compare current rule pack with previous synthetic baseline.
+      - Pause non-urgent rule activation if change-related.
+
+  - id: rb-sanctions-queue-growth
+    title: Sanctions screening queue growth
+    owner_service: svc-sanctions-screening
+    severity_guidance: P2 when queue age exceeds 10 minutes; P1 if release processing stops.
+    related_flows: [flow-sanctions-hold-release]
+    signals: [screening queue depth, sanctions.case_created rate, release backlog]
+    first_actions:
+      - Check screening adapter error rate.
+      - Confirm case creation events are reaching workbench.
+      - Switch to synthetic degraded-mode queue if configured.
+
+  - id: rb-sanctions-release-delay
+    title: Sanctions release delay
+    owner_service: svc-sanctions-screening
+    severity_guidance: P2 when reviewed cases fail to release within SLA.
+    related_flows: [flow-sanctions-hold-release]
+    signals: [case approved age, sanctions.payment_released lag, routing resume failures]
+    first_actions:
+      - Check release event publisher lag.
+      - Confirm decision status in Investigation Workbench.
+      - Reconcile held payment IDs against routing pending list.
+
+  - id: rb-routing-decision-errors
+    title: Routing decision errors
+    owner_service: svc-routing-decision
+    severity_guidance: P1 if no route can be selected for priority corridors.
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009]
+    signals: [routing.decision_completed rate, route lookup error count, route table version]
+    first_actions:
+      - Validate active route table version.
+      - Check corridor-specific route rules.
+      - Fall back to previous approved synthetic route table if authorised.
+
+  - id: rb-swift-ack-delay
+    title: SWIFT acknowledgement delay
+    owner_service: svc-swift-connector
+    severity_guidance: P2 for ack delay above 15 minutes; P1 for submission outage.
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009, flow-inbound-status-update]
+    signals: [swift.message_submitted count, swift.ack_received lag, network_message_id reconciliation gap]
+    first_actions:
+      - Check simulated network boundary availability.
+      - Reconcile submitted messages against ack store.
+      - Notify production support of uncertain status population.
+
+  - id: rb-status-publication-lag
+    title: Status publication lag
+    owner_service: svc-status-publisher
+    severity_guidance: P2 when lag affects support visibility; P1 when customer-facing status is stale across flows.
+    related_flows: [flow-outbound-pacs008, flow-outbound-pacs009, flow-inbound-status-update, flow-sanctions-hold-release, flow-payment-repair-investigation]
+    signals: [payment.status_updated lag, dead-letter queue depth, downstream publish errors]
+    first_actions:
+      - Inspect dead-letter queue by source event.
+      - Replay oldest safe status events.
+      - Compare published status counts with upstream event counts.
+
+  - id: rb-investigation-backlog
+    title: Investigation backlog
+    owner_service: svc-investigation-workbench
+    severity_guidance: P2 when repair or sanctions case age breaches synthetic SLA.
+    related_flows: [flow-sanctions-hold-release, flow-payment-repair-investigation]
+    signals: [open case count, median case age, payment.repaired rate]
+    first_actions:
+      - Split backlog by case type and priority.
+      - Confirm case API is accepting decisions.
+      - Escalate aged cases to synthetic operations lead role.
+
+  - id: rb-data-lake-publish-delay
+    title: Data lake publish delay
+    owner_service: svc-data-lake-publisher
+    severity_guidance: P3 for dashboard freshness delay; P2 if operational reporting is affected.
+    related_flows: [flow-inbound-status-update, flow-sanctions-hold-release, flow-payment-repair-investigation]
+    signals: [analytics freshness minutes, publish error count, event offset lag]
+    first_actions:
+      - Check latest consumed event offset.
+      - Reprocess failed synthetic analytics batches.
+      - Mark executive dashboard freshness indicator amber if lag persists.

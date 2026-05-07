@@ -1,0 +1,119 @@
+metadata:
+  classification: synthetic
+  schema_version: "1.0"
+
+events:
+  - name: payment.initiated
+    version: "1.0"
+    owner_service: svc-payment-gateway
+    producer_services: [svc-payment-gateway]
+    consumer_services: [svc-payment-validation, svc-status-publisher]
+    flow_ids: [flow-outbound-pacs008, flow-outbound-pacs009]
+    description: Synthetic payment instruction accepted at the platform edge.
+    payload_fields:
+      - payment_id
+      - idempotency_key
+      - message_type
+      - debtor_agent
+      - creditor_agent
+      - instructed_amount
+      - currency
+
+  - name: payment.validated
+    version: "1.0"
+    owner_service: svc-payment-validation
+    producer_services: [svc-payment-validation]
+    consumer_services: [svc-sanctions-screening, svc-routing-decision]
+    flow_ids: [flow-outbound-pacs008, flow-outbound-pacs009, flow-payment-repair-investigation]
+    description: Payment passed platform validation rules.
+    payload_fields: [payment_id, message_type, validation_profile, rule_pack_version, validated_at]
+
+  - name: payment.validation_failed
+    version: "1.0"
+    owner_service: svc-payment-validation
+    producer_services: [svc-payment-validation]
+    consumer_services: [svc-status-publisher, svc-investigation-workbench]
+    flow_ids: [flow-payment-repair-investigation]
+    description: Payment failed one or more repairable validation checks.
+    payload_fields: [payment_id, failure_codes, repair_required, rule_pack_version, failed_at]
+
+  - name: sanctions.screening_requested
+    version: "1.0"
+    owner_service: svc-sanctions-screening
+    producer_services: [svc-sanctions-screening]
+    consumer_services: [svc-status-publisher]
+    flow_ids: [flow-outbound-pacs008, flow-outbound-pacs009]
+    description: Screening request submitted for synthetic parties and remittance text.
+    payload_fields: [payment_id, screening_request_id, party_count, priority, requested_at]
+
+  - name: sanctions.case_created
+    version: "1.0"
+    owner_service: svc-sanctions-screening
+    producer_services: [svc-sanctions-screening]
+    consumer_services: [svc-investigation-workbench, svc-status-publisher]
+    flow_ids: [flow-sanctions-hold-release]
+    description: Potential sanctions match created a synthetic case.
+    payload_fields: [payment_id, case_id, match_strength, held_reason, created_at]
+
+  - name: sanctions.payment_released
+    version: "1.0"
+    owner_service: svc-sanctions-screening
+    producer_services: [svc-sanctions-screening]
+    consumer_services: [svc-routing-decision, svc-status-publisher]
+    flow_ids: [flow-sanctions-hold-release, flow-outbound-pacs008, flow-outbound-pacs009]
+    description: Held payment released after synthetic operations review.
+    payload_fields: [payment_id, case_id, release_reason, released_by_role, released_at]
+
+  - name: routing.decision_completed
+    version: "1.0"
+    owner_service: svc-routing-decision
+    producer_services: [svc-routing-decision]
+    consumer_services: [svc-swift-connector]
+    flow_ids: [flow-outbound-pacs008, flow-outbound-pacs009, flow-sanctions-hold-release]
+    description: Route, rail, and settlement profile selected.
+    payload_fields: [payment_id, route_id, rail, settlement_profile, decision_reason, decided_at]
+
+  - name: swift.message_submitted
+    version: "1.0"
+    owner_service: svc-swift-connector
+    producer_services: [svc-swift-connector]
+    consumer_services: [svc-data-lake-publisher]
+    flow_ids: [flow-outbound-pacs008, flow-outbound-pacs009]
+    description: Synthetic ISO 20022 message submitted to simulated network boundary.
+    payload_fields: [payment_id, network_message_id, message_type, submission_status, submitted_at]
+
+  - name: swift.ack_received
+    version: "1.0"
+    owner_service: svc-swift-connector
+    producer_services: [svc-swift-connector]
+    consumer_services: [svc-status-publisher, svc-data-lake-publisher]
+    flow_ids: [flow-outbound-pacs008, flow-outbound-pacs009, flow-inbound-status-update]
+    description: Synthetic network acknowledgement received and correlated.
+    payload_fields: [payment_id, network_message_id, ack_code, ack_reason, received_at]
+
+  - name: payment.status_updated
+    version: "1.0"
+    owner_service: svc-status-publisher
+    producer_services: [svc-status-publisher]
+    consumer_services: [svc-payment-gateway, svc-investigation-workbench, svc-data-lake-publisher]
+    flow_ids: [flow-outbound-pacs008, flow-outbound-pacs009, flow-inbound-status-update, flow-sanctions-hold-release, flow-payment-repair-investigation]
+    description: Canonical platform status update for a synthetic payment.
+    payload_fields: [payment_id, previous_status, new_status, source_event, status_reason, updated_at]
+
+  - name: investigation.case_opened
+    version: "1.0"
+    owner_service: svc-investigation-workbench
+    producer_services: [svc-investigation-workbench]
+    consumer_services: [svc-sanctions-screening]
+    flow_ids: [flow-sanctions-hold-release, flow-payment-repair-investigation]
+    description: Operations case opened for repair, sanctions review, or payment investigation.
+    payload_fields: [case_id, payment_id, case_type, priority, opened_by_role, opened_at]
+
+  - name: payment.repaired
+    version: "1.0"
+    owner_service: svc-investigation-workbench
+    producer_services: [svc-investigation-workbench]
+    consumer_services: [svc-payment-validation, svc-payment-gateway, svc-status-publisher]
+    flow_ids: [flow-payment-repair-investigation]
+    description: Synthetic payment repaired by operations and ready for revalidation.
+    payload_fields: [payment_id, case_id, repaired_fields, repair_reason, repaired_at]

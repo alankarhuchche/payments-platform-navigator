@@ -1,0 +1,143 @@
+{
+  "metadata": {
+    "classification": "synthetic",
+    "as_of": "2026-05-07",
+    "purpose": "Executive and engineering dashboard data for knowledge freshness, ownership, dependency clarity, and change readiness."
+  },
+  "executive_summary": {
+    "overall_score": 82,
+    "trend": "improving",
+    "services_green": 4,
+    "services_amber": 4,
+    "services_red": 0,
+    "top_risks": [
+      "Sanctions negative-path knowledge is thinner than tier-0 criticality requires.",
+      "SWIFT acknowledgement runbook needs stronger replay examples.",
+      "Data lake freshness metrics are improving but still amber."
+    ],
+    "recommended_actions": [
+      "Prioritise sanctions hold-and-release examples for production support onboarding.",
+      "Add correlation diagrams for SWIFT acknowledgement handling.",
+      "Review knowledge-health dashboard thresholds monthly with engineering leads."
+    ]
+  },
+  "dimensions": [
+    {"id": "documentation_freshness", "label": "Documentation freshness", "weight": 0.25},
+    {"id": "ownership_clarity", "label": "Ownership clarity", "weight": 0.2},
+    {"id": "dependency_coverage", "label": "Dependency coverage", "weight": 0.2},
+    {"id": "operational_readiness", "label": "Operational readiness", "weight": 0.2},
+    {"id": "test_evidence", "label": "Test evidence", "weight": 0.15}
+  ],
+  "service_health": [
+    {
+      "id": "kh-payment-gateway",
+      "service_id": "svc-payment-gateway",
+      "score": 88,
+      "status": "green",
+      "last_reviewed": "2026-04-29",
+      "owner": "Synthetic Payments API Team",
+      "dimensions": {"documentation_freshness": 90, "ownership_clarity": 95, "dependency_coverage": 85, "operational_readiness": 86, "test_evidence": 84},
+      "related_runbooks": ["rb-payment-submission-latency", "rb-payment-replay"],
+      "related_tests": ["tc-payment-gateway-contract", "tc-outbound-pacs008-e2e"],
+      "related_changes": ["chg-2026-001"]
+    },
+    {
+      "id": "kh-payment-validation",
+      "service_id": "svc-payment-validation",
+      "score": 83,
+      "status": "green",
+      "last_reviewed": "2026-04-26",
+      "owner": "Synthetic Payments Validation Team",
+      "dimensions": {"documentation_freshness": 82, "ownership_clarity": 90, "dependency_coverage": 80, "operational_readiness": 84, "test_evidence": 82},
+      "related_runbooks": ["rb-validation-failure-spike"],
+      "related_tests": ["tc-validation-rules", "tc-payment-repair-e2e"],
+      "related_changes": ["chg-2026-002", "chg-2026-006"]
+    },
+    {
+      "id": "kh-sanctions-screening",
+      "service_id": "svc-sanctions-screening",
+      "score": 76,
+      "status": "amber",
+      "last_reviewed": "2026-04-20",
+      "owner": "Synthetic Financial Crime Integration Team",
+      "dimensions": {"documentation_freshness": 72, "ownership_clarity": 88, "dependency_coverage": 75, "operational_readiness": 73, "test_evidence": 74},
+      "related_runbooks": ["rb-sanctions-queue-growth", "rb-sanctions-release-delay"],
+      "related_tests": ["tc-sanctions-contract", "tc-sanctions-hold-release"],
+      "related_changes": ["chg-2026-003"]
+    },
+    {
+      "id": "kh-routing-decision",
+      "service_id": "svc-routing-decision",
+      "score": 81,
+      "status": "green",
+      "last_reviewed": "2026-04-27",
+      "owner": "Synthetic Payments Routing Team",
+      "dimensions": {"documentation_freshness": 80, "ownership_clarity": 86, "dependency_coverage": 84, "operational_readiness": 78, "test_evidence": 79},
+      "related_runbooks": ["rb-routing-decision-errors"],
+      "related_tests": ["tc-routing-decision-matrix", "tc-outbound-pacs009-e2e"],
+      "related_changes": ["chg-2026-004"]
+    },
+    {
+      "id": "kh-swift-connector",
+      "service_id": "svc-swift-connector",
+      "score": 78,
+      "status": "amber",
+      "last_reviewed": "2026-04-18",
+      "owner": "Synthetic Network Connectivity Team",
+      "dimensions": {"documentation_freshness": 74, "ownership_clarity": 86, "dependency_coverage": 78, "operational_readiness": 76, "test_evidence": 77},
+      "related_runbooks": ["rb-swift-ack-delay"],
+      "related_tests": ["tc-swift-message-contract", "tc-inbound-status-e2e"],
+      "related_changes": ["chg-2026-005"]
+    },
+    {
+      "id": "kh-status-publisher",
+      "service_id": "svc-status-publisher",
+      "score": 80,
+      "status": "green",
+      "last_reviewed": "2026-04-30",
+      "owner": "Synthetic Payments Observability Team",
+      "dimensions": {"documentation_freshness": 78, "ownership_clarity": 88, "dependency_coverage": 82, "operational_readiness": 81, "test_evidence": 79},
+      "related_runbooks": ["rb-status-publication-lag"],
+      "related_tests": ["tc-status-publication", "tc-inbound-status-e2e"],
+      "related_changes": ["chg-2026-006"]
+    },
+    {
+      "id": "kh-investigation-workbench",
+      "service_id": "svc-investigation-workbench",
+      "score": 77,
+      "status": "amber",
+      "last_reviewed": "2026-04-21",
+      "owner": "Synthetic Payments Operations Tooling Team",
+      "dimensions": {"documentation_freshness": 75, "ownership_clarity": 82, "dependency_coverage": 76, "operational_readiness": 78, "test_evidence": 73},
+      "related_runbooks": ["rb-investigation-backlog"],
+      "related_tests": ["tc-investigation-case-api", "tc-payment-repair-e2e"],
+      "related_changes": ["chg-2026-007"]
+    },
+    {
+      "id": "kh-data-lake-publisher",
+      "service_id": "svc-data-lake-publisher",
+      "score": 73,
+      "status": "amber",
+      "last_reviewed": "2026-04-19",
+      "owner": "Synthetic Payments Data Team",
+      "dimensions": {"documentation_freshness": 70, "ownership_clarity": 80, "dependency_coverage": 72, "operational_readiness": 72, "test_evidence": 71},
+      "related_runbooks": ["rb-data-lake-publish-delay"],
+      "related_tests": ["tc-data-lake-publication", "tc-knowledge-health-metrics"],
+      "related_changes": ["chg-2026-008"]
+    }
+  ],
+  "flow_health": [
+    {"flow_id": "flow-outbound-pacs008", "score": 86, "status": "green", "coverage": "strong", "watch_item": "Ack uncertainty examples need one more support scenario."},
+    {"flow_id": "flow-outbound-pacs009", "score": 81, "status": "green", "coverage": "good", "watch_item": "Cover-payment edge cases are a test gap."},
+    {"flow_id": "flow-inbound-status-update", "score": 79, "status": "amber", "coverage": "good", "watch_item": "Status replay guidance needs fuller examples."},
+    {"flow_id": "flow-sanctions-hold-release", "score": 75, "status": "amber", "coverage": "moderate", "watch_item": "Negative-path sanctions scenarios need more detail."},
+    {"flow_id": "flow-payment-repair-investigation", "score": 78, "status": "amber", "coverage": "good", "watch_item": "Repair quality controls should be clearer for new joiners."}
+  ],
+  "dashboard_tiles": [
+    {"id": "tile-critical-service-health", "title": "Tier-0 service knowledge health", "value": 82, "unit": "score", "status": "green"},
+    {"id": "tile-runbook-coverage", "title": "Runbook coverage", "value": 90, "unit": "percent", "status": "green"},
+    {"id": "tile-change-readiness", "title": "Change readiness evidence", "value": 84, "unit": "score", "status": "green"},
+    {"id": "tile-flow-coverage", "title": "Flow coverage", "value": 82, "unit": "percent", "status": "green"},
+    {"id": "tile-dashboard-freshness", "title": "Dashboard freshness", "value": 46, "unit": "minutes", "status": "amber"}
+  ]
+}
