@@ -1,5 +1,23 @@
 # Decision Log
 
+## 008 — Implement deterministic FastAPI backend before frontend
+
+Date: 2026-05-08
+
+Status: Accepted
+
+Decision: Phase 4 will implement the FastAPI backend before any React frontend work, using the existing synthetic data model and the Phase 3 API contract.
+
+Rationale: The frontend depends on stable API shapes, deterministic Ask the Platform behaviour, and change-safety checklist logic. Implementing and testing the backend first creates a reliable contract for the later UI phase while preserving the MVP constraints of no database, no authentication, no external AI, and no real integrations.
+
+Consequences:
+
+- Backend endpoints must load from repository-level synthetic YAML and JSON files.
+- Ask the Platform remains deterministic and rule-based.
+- Change-safety output must be explainable from source data.
+- The app must remain Cloud Run-ready by reading `PORT`, defaulting to `8080`, and binding to `0.0.0.0` when run directly.
+- Frontend code remains out of scope for this phase.
+
 ## 007 — Create UI design and API contract before implementation
 
 Date: 2026-05-07
