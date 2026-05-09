@@ -13,6 +13,8 @@ class Settings:
     backend_dir = Path(__file__).resolve().parents[1]
     repo_root = backend_dir.parent
     data_dir = repo_root / "data"
+    container_static_dir = repo_root / "static"
+    local_frontend_dist_dir = repo_root / "frontend" / "dist"
     cors_origins = [
         "http://localhost:3000",
         "http://localhost:5173",

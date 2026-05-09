@@ -38,6 +38,17 @@ cd backend
 pytest
 ```
 
+## Full-Stack Container
+
+From the repository root:
+
+```bash
+docker build -t payments-platform-navigator .
+docker run --rm -p 8080:8080 payments-platform-navigator
+```
+
+The container runs one FastAPI app. It serves `/health`, `/api/*`, and the built React frontend from the same process.
+
 ## Endpoints
 
 - `GET /health`

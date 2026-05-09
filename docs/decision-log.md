@@ -1,5 +1,23 @@
 # Decision Log
 
+## 010 — Package frontend and backend into a single Cloud Run container
+
+Date: 2026-05-09
+
+Status: Accepted
+
+Decision: Package the React frontend, FastAPI backend, and synthetic data into one Docker image that runs a single FastAPI process for Cloud Run.
+
+Rationale: The MVP should be simple to run locally and deploy to Cloud Run without introducing extra infrastructure. A multi-stage Docker build keeps frontend build tooling out of the runtime image while allowing FastAPI to serve both `/api/*` routes and the built frontend static files.
+
+Consequences:
+
+- The container reads `PORT`, defaults to `8080`, and binds to `0.0.0.0`.
+- Frontend static files are produced during Docker build and served by FastAPI.
+- Repository-level synthetic data is copied to `/app/data` in the runtime image.
+- Unknown non-API routes fall back to `index.html` so frontend browser refresh works.
+- External AI, database, authentication, Kubernetes, and cloud-specific service dependencies remain out of scope.
+
 ## 009 — Implement React frontend against deterministic backend contract
 
 Date: 2026-05-08

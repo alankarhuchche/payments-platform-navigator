@@ -97,6 +97,15 @@ Recommended serving model:
 - FastAPI serves `/api/*` endpoints and static frontend routes.
 - Uvicorn starts FastAPI using `host=0.0.0.0` and `port=${PORT:-8080}`.
 
+Implemented container layout:
+
+- Frontend is built in a Node build stage from `frontend/`.
+- Python runtime installs `backend/requirements.txt`.
+- Backend source is copied to `/app/backend`.
+- Synthetic data is copied to `/app/data`.
+- Built frontend assets are copied to `/app/static`.
+- FastAPI serves `/assets/*` directly and falls back unknown non-API paths to `/app/static/index.html` so browser refresh works.
+
 ## 5. Frontend / Backend Relationship
 
 The frontend owns:
@@ -163,6 +172,20 @@ Local verification should include:
 - `GET /api/knowledge-health`
 - `POST /api/ask`
 - `POST /api/change-safety-checklist`
+
+Full-stack Docker verification:
+
+```bash
+docker build -t payments-platform-navigator .
+docker run --rm -p 8080:8080 payments-platform-navigator
+```
+
+Then verify:
+
+- `http://localhost:8080/`
+- `http://localhost:8080/health`
+- `http://localhost:8080/api/services`
+- `http://localhost:8080/api/flows`
 
 ## 8. Deployment Flow
 

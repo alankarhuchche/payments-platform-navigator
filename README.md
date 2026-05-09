@@ -25,9 +25,9 @@ This project uses synthetic data only.
 
 It does not contain real bank data, real payment data, real service names, real incidents, real people, customer data, credentials, or confidential architecture.
 
-## Planned MVP
+## MVP
 
-The MVP will include:
+The MVP includes:
 
 - role-based onboarding journey
 - payment flow explorer
@@ -37,6 +37,48 @@ The MVP will include:
 - change-safety checklist
 - knowledge-health dashboard
 - payments glossary
+
+## Run Locally With Docker
+
+Build the single-container full-stack image:
+
+```bash
+docker build -t payments-platform-navigator .
+```
+
+Run the container:
+
+```bash
+docker run --rm -p 8080:8080 payments-platform-navigator
+```
+
+Open:
+
+- `http://localhost:8080/`
+- `http://localhost:8080/health`
+- `http://localhost:8080/api/services`
+- `http://localhost:8080/api/flows`
+
+The container runs one FastAPI app. It serves the React frontend static files, keeps API routes under `/api/*`, exposes `/health`, reads `PORT`, defaults to `8080`, and binds to `0.0.0.0`.
+
+## Run Locally Without Docker
+
+Backend:
+
+```bash
+cd backend
+python -m pytest
+uvicorn app.main:app --host 0.0.0.0 --port 8080
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run build
+npm run dev
+```
 
 ## Target Architecture
 
@@ -51,7 +93,7 @@ Initial MVP:
 
 ## Project Status
 
-Current phase: Product and repository foundation.
+Current phase: Docker and local full-stack run.
 
 See:
 

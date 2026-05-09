@@ -7,6 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
 
 from .config import get_settings
@@ -83,6 +85,37 @@ def create_app() -> FastAPI:
     app.include_router(knowledge_health.router)
     app.include_router(ask.router)
     app.include_router(change_safety.router)
+
+    static_dir = (
+        settings.container_static_dir
+        if settings.container_static_dir.exists()
+        else settings.local_frontend_dist_dir
+    )
+    index_file = static_dir / "index.html"
+    if static_dir.exists():
+        assets_dir = static_dir / "assets"
+        if assets_dir.exists():
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+        @app.get("/", include_in_schema=False)
+        async def serve_frontend_root() -> FileResponse:
+            return FileResponse(index_file)
+
+        @app.get("/{path:path}", include_in_schema=False)
+        async def serve_frontend_fallback(path: str) -> FileResponse:
+            if path.startswith("api/") or path == "health":
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "code": "not_found",
+                        "message": "Route not found.",
+                        "details": {"path": path},
+                    },
+                )
+            candidate = static_dir / path
+            if candidate.is_file():
+                return FileResponse(candidate)
+            return FileResponse(index_file)
 
     return app
 
