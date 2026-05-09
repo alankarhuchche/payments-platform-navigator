@@ -1,5 +1,23 @@
 # Decision Log
 
+## 009 — Implement React frontend against deterministic backend contract
+
+Date: 2026-05-08
+
+Status: Accepted
+
+Decision: Phase 5 will implement a Vite React TypeScript frontend that consumes the deterministic FastAPI backend contract created in Phase 4.
+
+Rationale: The project now needs a demo-friendly user interface that proves the value of role-based onboarding, payment-flow exploration, service dependency navigation, rule-based Ask the Platform, change-safety guidance, knowledge-health metrics, and glossary lookup without introducing frontend-only business rules or external AI dependency.
+
+Consequences:
+
+- The frontend must call the backend APIs rather than reading data files directly.
+- UI routing can remain simple for MVP.
+- The interface should stay sober, practical, and payments-aware.
+- Backend changes are limited to strict integration fixes only.
+- Docker, authentication, database persistence, and external AI remain out of scope for this phase.
+
 ## 008 — Implement deterministic FastAPI backend before frontend
 
 Date: 2026-05-08
