@@ -1,5 +1,27 @@
 # Decision Log
 
+## 013 — Plan AI-assisted explanations as retrieval-grounded optional capability
+
+Date: 2026-05-10
+
+Status: Accepted
+
+Decision: Phase 9A will create architectural and prompting design documents for an optional, AI-assisted explanation enhancement, without implementing code. The enhancement would provide contextual explanations grounded in the deterministic backend and synthetic data, disabled by default, with extensive guardrails against hallucination, confidentiality risks, and over-trust.
+
+Rationale: The MVP successfully demonstrates deterministic, rule-based assistance for complex payments domain questions. To improve user experience for certain journeys (explaining why a checklist step matters, contextualizing glossary terms, augmenting Ask-the-Platform with deeper explanations), AI-assisted generation could be valuable. However, introducing AI to a public portfolio application requires careful planning around hallucination prevention, data safety, synthetic-data discipline, and user trust. This decision establishes the architecture, prompting strategy, risk assessment, and rollout plan before any implementation begins.
+
+Consequences:
+
+- The application will remain fully deterministic and functional without any AI provider configured.
+- If AI is enabled in future deployments, it will augment (not replace) deterministic outputs.
+- All explanations will be grounded in the structured synthetic data model; AI cannot hallucinate beyond the context-pack.
+- AI features will be disabled by default (`AI_ENABLED=false`) to preserve operational simplicity and safety.
+- Vertex AI (Google Cloud) is the preferred provider if AI is enabled; OpenAI is optional fallback.
+- Extensive evaluation gates and abort criteria prevent low-quality AI from reaching users.
+- All prompts, context-pack formats, and safety procedures are documented and open-source.
+- No external AI providers are required to run or develop the application.
+- Implementation (if approved) will follow a staged rollout: backend infrastructure → provider integration → frontend UI → production with feature flags.
+
 ## 011 — Use relative API paths for single-container Cloud Run deployment
 
 Date: 2026-05-10
