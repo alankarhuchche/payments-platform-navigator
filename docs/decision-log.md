@@ -1,5 +1,30 @@
 # Decision Log
 
+## 014 — Add context-pack builder before AI provider integration
+
+Date: 2026-05-10
+
+Status: Accepted
+
+Decision: Phase 9B will implement a backend context-pack builder service (`ContextPackBuilder`) and a new `POST /api/context-pack` endpoint that returns structured context for any user question, without calling any external AI model. The context pack includes detected intent, matched entities, relevant services/flows/incidents/runbooks/tests, source files, and confidence score.
+
+Rationale: Before integrating any AI provider (Vertex AI, OpenAI), the deterministic backend must be able to assemble the structured context that would be passed to AI. This requires extracting entity-matching, intent-detection, and confidence-scoring logic into a reusable service. The context-pack endpoint serves dual purposes: (1) it enables future AI integration (Phase 9D onwards) by providing the structured input AI would consume, and (2) it provides transparency and debugging visibility into what synthetic data is available behind any answer, supporting the portfolio project's goal of demonstrating architecture thinking.
+
+Consequences:
+
+- New service: `backend/app/services/context_pack_service.py` builds context packs from questions.
+- New endpoint: `POST /api/context-pack` returns structured context packs (for debugging/transparency).
+- No external AI model is called; context packs are assembled from deterministic logic only.
+- Intent detection is extracted from existing Ask service and formalized (7 intent types supported).
+- Entity matching uses existing `KnowledgeData` methods but is wrapped in a new service for reuse.
+- Context packs include unsupported-reason for questions outside the synthetic platform scope (real banks, real data, etc.).
+- Existing `/api/ask` endpoint behavior is unchanged; new service is purely additive.
+- Tests are added for context-pack generation and the new endpoint.
+- Documentation is updated with new endpoint definition and example request/response.
+- No environment variables, secrets, or external dependencies are added.
+
+---
+
 ## 013 — Plan AI-assisted explanations as retrieval-grounded optional capability
 
 Date: 2026-05-10

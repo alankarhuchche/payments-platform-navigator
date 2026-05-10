@@ -59,8 +59,49 @@ The container runs one FastAPI app. It serves `/health`, `/api/*`, and the built
 - `GET /api/glossary`
 - `GET /api/onboarding?role={role}&area={area}`
 - `GET /api/knowledge-health`
-- `POST /api/ask`
-- `POST /api/change-safety-checklist`
+- `POST /api/ask` - Ask the Platform deterministic Q&A
+- `POST /api/change-safety-checklist` - Generate change-safety checklist
+- `POST /api/context-pack` - Return structured context pack for a question (Phase 9B)
+
+### POST /api/context-pack
+
+Returns the structured context pack for a question. Used for debugging and transparency to see what synthetic data is available behind an answer.
+
+**Request**:
+```json
+{
+  "question": "What should I check before changing Payment Validation Service?",
+  "service_id": "optional-service-id",
+  "flow_id": "optional-flow-id"
+}
+```
+
+**Response**:
+```json
+{
+  "question": "...",
+  "detected_intent": "change_safety|service_explanation|payment_flow_explanation|incident_or_runbook_help|glossary_explanation|onboarding_guidance|unsupported",
+  "matched_entities": {
+    "services": ["service-1"],
+    "flows": ["flow-1"],
+    "events": ["event-name"],
+    "apis": ["api-1"],
+    "glossary_terms": ["term"]
+  },
+  "relevant_services": ["service-1", "service-2"],
+  "relevant_flows": ["flow-1"],
+  "relevant_events": ["event-1"],
+  "relevant_apis": ["api-1"],
+  "relevant_runbooks": ["runbook-1"],
+  "relevant_incidents": ["INC-2024-0001"],
+  "relevant_tests": ["TEST-1"],
+  "relevant_risks": [{"id": "risk-1", "description": "..."}],
+  "suggested_next_steps": ["..."],
+  "source_files": ["services.yaml", "payment-flows.yaml"],
+  "confidence": 0.92,
+  "unsupported_reason": null
+}
+```
 
 ## Data Loading
 
