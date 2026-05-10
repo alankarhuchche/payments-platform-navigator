@@ -1,725 +1,888 @@
 # AI-Assisted Explanation Design
 
-## 1. AI Enhancement Objective
+## 1. Executive Summary
 
-The Payments Platform Navigator currently answers user questions through deterministic, rule-based logic applied to synthetic structured data. This design document outlines an optional AI-assisted enhancement that would allow the system to generate contextual explanations and answer open-ended platform questions using a grounded AI explainer, while preserving the existing deterministic architecture as the source of truth.
+Payments Platform Navigator is a deterministic, retrieval-based assistant for complex payments platform knowledge. This document proposes an optional AI-assisted explanation layer that enhances the user experience by generating contextual explanations grounded in retrieved synthetic data.
 
-The goal is not to turn the product into a chatbot. The goal is to provide an optional, explainer-augmented experience that helps engineers understand *why* certain guidance applies to their platform questions, sourced entirely from the structured knowledge already in the system.
+The core principle is simple: **retrieval first, AI for explanation only**. The deterministic backend remains the source of truth. The AI layer is optional, disabled by default, and designed to help engineers understand *why* platform guidance matters—not to replace structured knowledge with unsupported opinions.
 
----
-
-## 2. What AI Is and Is Not Allowed to Do
-
-### Allowed
-
-- Generate explanations and prose descriptions grounded in structured data.
-- Rephrase technical concepts in multiple styles (detailed, executive, practical).
-- Answer "why" and "how" questions if the context data contains the answer.
-- Generate examples from the synthetic glossary, runbooks, and incident records.
-- Suggest related services, flows, or runbooks based on platform context.
-- Surface unresolved questions or edge cases back to the user for clarification.
-- Refusal: explicitly decline to answer questions outside the synthetic platform scope.
-
-### Not Allowed
-
-- Make up services, flows, APIs, events, or incidents not in the data model.
-- Answer questions about real banks, payment systems, or financial infrastructure.
-- Claim to understand real operational behaviour that is not explicitly in the structured data.
-- Bypass the deterministic backend or suggest guidance not grounded in source data.
-- Handle real customer data, real incidents, or real payment information.
-- Operate in stateful conversation mode where prior responses become implicit context.
-- Generate documentation claims that should instead update the source YAML/JSON files.
-- Override the change-safety checklist or other deterministic outputs with AI opinion.
+This is not a chatbot enhancement. It is a targeted explanation tool for engineers navigating complex payment architecture using a synthetic knowledge base.
 
 ---
 
-## 3. Why Deterministic Retrieval Remains the Source of Truth
+## 2. Design Principles
 
-The deterministic backend will continue to be the authoritative source for all platform intelligence:
+The AI-assisted explanation layer is built on these non-negotiable principles:
 
-- **Change-safety checklist**: Generated deterministically from service links, flow dependencies, test records, and incident patterns. No AI rewriting.
-- **Onboarding paths**: Rule-based on role and experience level. No AI substitution.
-- **Service dependencies**: Explicitly defined in `services.yaml`. AI only contextualizes.
-- **Payment flows**: Authoritative in `payment-flows.yaml`. AI only narrates.
-- **Operational risks**: Sourced from `incidents.json`, `knowledge-health.json`, and linked runbooks. AI only explains.
+### Retrieval First
+The deterministic backend retrieves entities (services, flows, incidents, runbooks, tests) from the synthetic knowledge base before any AI is involved. AI never discovers or searches independently. AI only explains what has already been retrieved.
 
-The AI layer is an *explanation and exploration helper*, not a replacement for the deterministic architecture. Users making critical decisions (change approval, incident diagnosis, production operations) rely on structured data, not AI opinion.
+### Deterministic Context as Source of Truth
+The change-safety checklist, onboarding paths, and Ask-the-Platform answers are deterministically generated from the data model. AI explanations augment these answers but never override them. Users making critical decisions rely on deterministic outputs, not AI opinion.
 
----
+### AI Disabled by Default
+The application runs fully without any AI provider. Environment variable `ENABLE_AI_EXPLANATIONS=false` is the default. Cloud Run deployments work without Secret Manager AI credentials. Developers can build, test, and understand the system without AI complexity.
 
-## 4. Target User Journeys for AI-Assisted Explanation
+### Source-Aware Answers
+Every explanation cites the synthetic data it references (service ID, flow ID, incident ID, runbook ID). No explanation is shown without traceable sources. If the context-pack doesn't cover a question, AI declines to answer.
 
-### Journey A: "Why" Questions on Deterministic Output
+### No Unsupported Claims
+AI does not invent facts, extend beyond the context-pack, or claim knowledge about real banks. If a question asks about real payment systems, real regulations, or real bank architecture, AI refuses clearly.
 
-User runs the change-safety checklist for Payment Validation Service.
+### No Real-Bank Inference
+AI never uses internet knowledge, Wikipedia, banking textbooks, or external sources as evidence. The only source of truth is the synthetic data provided in the context-pack.
 
-The UI shows:
-- Deterministic checklist (as today)
-- Optional "Explain why this step matters" button
+### Public Portfolio Safety
+All data is synthetic and fictional. All guardrails are designed so that a public GitHub repository remains safe. No confidential architecture, customer data, or real incident details are at risk.
 
-User clicks the button. The AI generates a 2-3 paragraph explanation grounding the step in:
-- Which services are actually impacted
-- Which payment flows could be affected
-- Which prior incidents inform this requirement
-- Practical actions the user should take
-
-Result: User understands not just *what* to check, but *why* it matters to their platform.
+### Cloud Run Compatibility
+The design works within Google Cloud Run's constraints: stateless execution, environment-variable configuration, Secret Manager integration, no persistent state, no external service dependencies beyond optional AI providers.
 
 ---
 
-### Journey B: Open-Ended Platform Questions
+## 3. What AI Is Allowed to Do
 
-User asks: "What happens when a SWIFT connector timeout occurs in an outbound pacs.008 transfer?"
-
-The system:
-1. Searches the glossary, flows, services, incidents for relevant context.
-2. Retrieves the outbound SWIFT flow definition, the SWIFT Connector service, related incidents, and applicable runbooks.
-3. Passes this context to the AI explainer with a grounded prompt.
-4. AI generates a structured answer explaining: the flow step where timeout occurs, which services are affected, what state change happens, which runbook applies, what a support engineer should do.
-5. All claims are cited back to source data.
-
-Result: User gets a platform-specific answer, not generic internet knowledge.
+- Rewrite retrieved context into clearer, more detailed explanations
+- Explain how payment flows work using retrieved synthetic data
+- Explain service dependencies using retrieved service metadata
+- Explain why change-safety checklist items matter using incident/test data
+- Explain onboarding paths using role definitions and learning progressions
+- Summarise relevant incidents and runbooks from the retrieved context
+- Help new engineers understand payment platform concepts using synthetic knowledge base
+- Decline to answer out-of-scope questions clearly and helpfully
 
 ---
 
-### Journey C: Glossary Context and Examples
+## 4. What AI Is Not Allowed to Do
 
-User looks up "sanctions screening" in the glossary.
-
-The UI shows:
-- Glossary definition (as today)
-- Optional "Show platform examples" button
-
-User clicks the button. The AI generates:
-- Which services perform sanctions screening in this platform
-- Which flows include sanctions screening
-- Which payment types trigger screening
-- Which incidents involved screening decisions
-- What a new engineer should understand about screening risk
-
-Result: User understands the glossary term in the context of their specific platform.
+- Invent services, flows, incidents, events, APIs, controls, owners, or data that don't exist
+- Answer questions about real bank architecture or real payment operations
+- Claim the synthetic system reflects any real bank or production environment
+- Use external internet knowledge as source of truth
+- Make operational decisions or override deterministic guidance
+- Provide regulatory, legal, or compliance advice
+- Process, reference, or reason about customer data, payment details, or real incident information
+- Hide uncertainty or claim confidence beyond what the data supports
+- Operate statelessly across conversation turns (each request is independent)
+- Suggest changes to the source YAML/JSON data model (that's a human decision)
 
 ---
 
-### Journey D: Onboarding Path Exploration
+## 5. Target User Journeys
 
-A new test engineer receives an onboarding path generated by the rule-based system.
+### Journey 1: AI-Assisted Change-Safety Explanation
 
-The UI shows:
-- Role-based learning path (as today)
-- Optional "Explain this phase" button for each section
+Engineer runs the deterministic change-safety checklist for Payment Validation Service. The UI shows the checklist items. Engineer clicks "Explain why this step matters" on a specific checklist item.
 
-User clicks the button. The AI generates:
-- Why this particular flow is important to understand before others
-- Which services will become clear after learning this flow
-- Which test scenarios they should expect to write
-- Common misconceptions to avoid
+System flow:
+1. Deterministic backend already retrieved: affected flows, services, tests, incidents, runbooks
+2. Context-pack assembled with relevant entities
+3. AI generates explanation connecting the step to real platform risks
+4. Explanation cites incidents, tests, and runbooks that inform the requirement
+5. Engineer understands not just *what* to do, but *why* it matters
 
-Result: User understands the *learning architecture*, not just a reading list.
+Result: Engineer confidence increases. Change safety improves because the engineer understands the reasoning.
+
+### Journey 2: AI-Assisted Payment-Flow Explanation
+
+Engineer is learning the platform and opens the "Outbound SWIFT pacs.008 Customer Credit Transfer" flow. The UI shows the deterministic flow steps. Engineer clicks "Explain what happens here" on a specific step.
+
+System flow:
+1. Deterministic backend retrieved: flow definition, services involved, events, APIs, risks
+2. Context-pack assembled with retrieved entities
+3. AI generates narrative explanation of that step
+4. Explanation explains which services are involved, what message changes happen, what events are published
+5. Engineer reads explanation to understand the flow
+
+Result: New engineer learns faster. Flow understanding is grounded in synthetic platform data.
+
+### Journey 3: AI-Assisted Service Explanation
+
+Engineer investigates "Payment Validation Service" in the dependency map. The UI shows deterministic service metadata. Engineer clicks "Explain the full picture" to get deeper context.
+
+System flow:
+1. Deterministic backend retrieved: service definition, dependencies, flows using it, incidents, risks, runbooks
+2. Context-pack assembled with all relevant entities
+3. AI generates comprehensive explanation of service purpose, importance, and failure modes
+4. Explanation cites specific incidents that show why this service matters
+5. Engineer understands the service in platform context, not just as code
+
+Result: Service understanding is grounded in platform risks and incident history.
+
+### Journey 4: AI-Assisted Onboarding Guidance
+
+New test engineer receives an onboarding path generated deterministically by role and experience level. The UI shows the learning path phases. Engineer clicks "Why is this phase important?" on a specific phase.
+
+System flow:
+1. Deterministic backend retrieved: onboarding path definition, recommended flows, services, learning objectives
+2. Context-pack assembled with learning phase context
+3. AI generates explanation of why this phase matters before the next phase
+4. Explanation connects to specific flows and risks the engineer will encounter
+5. Engineer understands the learning architecture, not just reading order
+
+Result: Onboarding engagement increases. Engineer understands *why* the path is structured this way.
+
+### Journey 5: AI-Assisted Glossary Explanation
+
+Engineer looks up "sanctions screening" in the glossary. The UI shows the deterministic glossary definition. Engineer clicks "Show platform examples" to see how this term applies.
+
+System flow:
+1. Deterministic backend retrieved: glossary term, relevant services, flows, incidents, glossary links
+2. Context-pack assembled with term-specific context
+3. AI generates explanation of how this term applies in the specific platform
+4. Explanation shows which services implement this, which flows involve it, which incidents demonstrate it
+5. Engineer learns the term in platform context, not as isolated definition
+
+Result: Glossary becomes learning tool, not just reference.
+
+### Journey 6: Unsupported/Out-of-Scope Question Handling
+
+Engineer asks: "What's the difference between SWIFT and ACH payment types?"
+
+System flow:
+1. Deterministic backend detects: question is about real banking (outside platform scope)
+2. Context-pack is empty or insufficient
+3. AI is instructed to refuse: "I only know about this synthetic platform. Your platform uses SWIFT. If you want to understand real banking differences, consult external resources."
+4. AI offers: "I can explain how your platform handles SWIFT or what ACH would look like here, but I can't compare against real-world systems."
+5. User is directed to appropriate learning path or external source
+
+Result: User is not hallucinated an answer. Trust increases because AI admits boundaries.
 
 ---
 
-## 5. AI-Assisted Ask-the-Platform Flow
+## 6. Proposed Architecture
 
-Today's Ask the Platform is deterministic (pattern matching on the question, retrieving structured answers).
+The AI-assisted explanation flow fits into the existing system like this:
 
-Optional enhancement:
+```
+User opens React App
+    ↓
+User sees deterministic output
+(change-safety checklist, flow details, service definition, etc.)
+    ↓
+User sees "Explain" button (if AI is enabled)
+    ↓
+User clicks button
+    ↓
+React sends request to FastAPI /api/ask?mode=explain
+    ↓
+FastAPI Intent Detection
+(What is the user asking about?)
+    ↓
+FastAPI Entity Matching
+(Which services, flows, incidents, runbooks match?)
+    ↓
+Context-Pack Builder
+(Assemble all relevant data into structured format)
+    ↓
+Deterministic Answer Generated
+(Change-safety checklist, flow step, service detail, etc.)
+    ↓
+Decision: Is AI enabled?
+    ├─ NO → Return deterministic answer only
+    └─ YES → Call AI Explainer Service with context-pack
+        ↓
+    AI Explainer
+    (Vertex AI Gemini or OpenAI)
+        ↓
+    Response with explanation, citations, confidence, guardrail notes
+        ↓
+React displays answer
+(Deterministic output + AI explanation + sources + confidence)
+```
 
-1. **User enters question** (e.g., "What should I check before changing the routing logic?")
-
-2. **Deterministic phase**: Backend identifies question intent, retrieves structured context (related services, flows, incidents, tests, runbooks).
-
-3. **Context-pack assembly**: System builds a structured context package with:
-   - Query intent classification
-   - Retrieved service/flow/incident IDs
-   - Relevant YAML snippets
-   - Linked runbook excerpts
-   - Test coverage records
-   - Architecture metadata
-
-4. **AI explanation phase** (if enabled and answer not directly available):
-   - AI receives context-pack + grounded prompt
-   - AI generates structured explanation
-   - AI cites every claim back to source data ID
-
-5. **User receives answer**:
-   - Answer text with inline citations
-   - Links to source data items
-   - "View this in deterministic checklist" option
-   - "Refined by: Production-ready AI" badge
-
-The deterministic system is the *decision authority*. The AI is the *explainer*.
+The deterministic path works at every step. AI is optional and never blocks the user from seeing the deterministic answer.
 
 ---
 
-## 6. Context-Pack Architecture
+## 7. Context-Pack Architecture
 
-A context-pack is a structured data container that holds all the information an AI explainer needs to answer a question *without hallucinating*.
+A context-pack is the structured data container that holds everything the AI explainer needs—and nothing it doesn't need. It prevents hallucination by providing strict boundaries: the AI can only reference entities in the context-pack.
 
 ### Context-Pack Structure
 
 ```json
 {
-  "query": {
-    "text": "What should I check before changing the routing logic?",
-    "intent": "change_impact_assessment",
-    "classification": "routing_service_change"
+  "question": {
+    "text": "User's original question or request",
+    "intent": "explain_checklist_step | explain_flow_step | explain_service | explain_onboarding_phase | explain_glossary_term",
+    "user_journey": "change_safety | flow_exploration | service_investigation | onboarding_guidance | glossary_lookup"
   },
-  "metadata": {
-    "generated_at": "2026-05-10T14:30:00Z",
-    "expires_at": "2026-05-10T15:00:00Z",
-    "source_version": "main-2026-05-10",
-    "source_hashes": {
-      "services.yaml": "abc123...",
-      "payment-flows.yaml": "def456...",
-      "incidents.json": "ghi789..."
-    }
+  "detected_context": {
+    "primary_entity_type": "service | flow | checklist_step | onboarding_phase | glossary_term",
+    "primary_entity_id": "entity-id",
+    "primary_entity_name": "Human readable name"
   },
-  "retrieved_entities": {
+  "matched_entities": {
     "services": [
       {
-        "id": "routing-decision-service",
-        "name": "Routing Decision Service",
-        "excerpt": "...",
-        "risk_level": "critical",
-        "related_incidents_count": 3
+        "id": "service-id",
+        "name": "Service Name",
+        "criticality": "critical | high | medium | low",
+        "description": "Brief description",
+        "owner": "Team name",
+        "published_events": ["event-1", "event-2"],
+        "consumed_events": ["event-3"],
+        "exposed_apis": ["api-1"]
       }
     ],
     "flows": [
       {
-        "id": "outbound_pacs008_customer",
-        "name": "Outbound SWIFT pacs.008 Customer Credit Transfer",
-        "uses_routing": true,
-        "excerpt": "..."
+        "id": "flow-id",
+        "name": "Flow Name",
+        "description": "What this flow does",
+        "services_involved": ["service-1", "service-2"],
+        "events_involved": ["event-1"],
+        "apis_involved": ["api-1"],
+        "risks": ["risk-category-1"],
+        "relevant_runbooks": ["RB-id"],
+        "test_coverage": ["TEST-id"]
+      }
+    ],
+    "events": [
+      {
+        "id": "event-id",
+        "name": "event.name",
+        "publisher": "service-id",
+        "subscribers": ["service-id"],
+        "description": "What this event represents"
+      }
+    ],
+    "apis": [
+      {
+        "id": "api-id",
+        "name": "GET /api/services",
+        "service": "service-id",
+        "description": "What this API does",
+        "contract_documented": true
+      }
+    ],
+    "runbooks": [
+      {
+        "id": "runbook-id",
+        "title": "Runbook Title",
+        "topic": "incident_response | operational_procedure | troubleshooting",
+        "description": "What this runbook covers",
+        "relevant_to": ["service-id", "incident-id"],
+        "excerpt": "Key steps or context"
       }
     ],
     "incidents": [
       {
         "id": "INC-2024-0042",
-        "title": "Routing timeout during surge",
-        "excerpt": "...",
-        "service": "routing-decision-service"
-      }
-    ],
-    "runbooks": [
-      {
-        "id": "RB-ROUTING-TIMEOUT",
-        "title": "Routing Timeout - Incident Response",
-        "excerpt": "...",
-        "relevance": "high"
+        "title": "Incident title",
+        "date": "2024-04-15",
+        "services_involved": ["service-id"],
+        "flows_affected": ["flow-id"],
+        "description": "What happened",
+        "lessons_learned": "Key takeaway",
+        "contributing_factors": ["root-cause"]
       }
     ],
     "tests": [
       {
-        "id": "TEST-ROUTING-FAILOVER",
-        "title": "Routing failover under load",
-        "coverage": "critical",
-        "excerpt": "..."
+        "id": "TEST-id",
+        "title": "Test name",
+        "description": "What this test validates",
+        "coverage": "critical | recommended | optional",
+        "services_tested": ["service-id"],
+        "flows_tested": ["flow-id"]
+      }
+    ],
+    "risks": [
+      {
+        "id": "risk-id",
+        "category": "timeout | data-loss | cascading-failure | dependency-failure",
+        "description": "What could go wrong",
+        "mitigation": "How to prevent or handle it",
+        "related_incidents": ["INC-id"]
       }
     ]
   },
+  "metadata": {
+    "generated_at": "2026-05-10T14:30:00Z",
+    "generated_by": "intent_matching | flow_reference | service_reference | checklist_step | glossary_lookup",
+    "source_version": "main-2026-05-10-abc123",
+    "source_files": [
+      "data/services.yaml",
+      "data/payment-flows.yaml",
+      "data/incidents.json",
+      "data/runbooks.yaml"
+    ],
+    "confidence": 0.92,
+    "completeness": "high | medium | low"
+  },
   "constraints": {
-    "no_external_sources": true,
     "synthetic_data_only": true,
-    "must_cite": true,
+    "no_external_sources": true,
+    "must_cite_all_claims": true,
+    "refuse_if_context_insufficient": true,
     "max_hallucination_risk": "low"
+  },
+  "exclusions": {
+    "out_of_scope_topics": ["real_bank_architecture", "regulatory_requirements", "competitor_systems"],
+    "unsupported_questions": "If user asks about real banking, state boundaries clearly",
+    "missing_entities": ["entity-id-that-was-referenced-but-not-found"]
   }
 }
 ```
 
 ### Context-Pack Assembly Rules
 
-- Include only entities directly relevant to the query intent.
-- Include enough detail that the AI can answer without making assumptions.
-- Include source IDs and versions so all claims can be verified.
-- Include retrieval confidence scores where applicable.
-- Expire context-packs if underlying data changes.
-- Mark unresolved references (e.g., missing linked incident).
+- Retrieve only entities directly relevant to the user's question and detected intent
+- Include enough detail (descriptions, relationships) that AI can explain without guessing
+- Include source file references so users can verify claims
+- Include confidence score—if context is weak, AI confidence degrades
+- Mark completeness: is this a complete picture or partial context?
+- List any missing entities that were referenced but not found (data integrity check)
+- Set exclusions and boundaries upfront: out-of-scope topics, unsupported questions
+- Context-pack has an implicit expiration: if data changes, old context is stale
 
 ---
 
-## 7. Proposed Backend Components
+## 8. Backend Changes for Later Phases
 
-### 7.1 AI Configuration Service
+These components will be implemented in future phases (not in Phase 9A):
 
-**Responsibility**: Manage AI provider credentials, feature flags, and capability settings.
+### context_pack_service.py
 
-**Files/Modules**:
-- `backend/app/ai_config.py`
-
-**Interface**:
-- Load AI provider settings from environment variables (disabled by default).
-- Feature flags for: enable AI explanations, enable Ask-the-Platform AI augmentation, max AI response length, citation requirements.
-- Provider selection: Vertex AI (Google Cloud) by default if enabled, OpenAI as optional fallback.
-- Circuit breaker: if AI service fails, fall back to deterministic-only mode.
-
----
-
-### 7.2 Context-Pack Builder
-
-**Responsibility**: Assemble context-packs from structured data.
-
-**Files/Modules**:
-- `backend/app/context_builder.py`
-
-**Interface**:
-- `build_context_pack(query_intent: str, entity_ids: list, scope: str) -> dict`
-- Retrieves entities from the data loader.
-- Includes relevant excerpts, related records, and metadata.
-- Adds source hashes and version info.
-- Sets expiration and constraint markers.
-
----
-
-### 7.3 AI Explainer Service
-
-**Responsibility**: Call the AI provider with a grounded prompt and context-pack.
-
-**Files/Modules**:
-- `backend/app/ai_explainer.py`
-
-**Interface**:
-- `explain(context_pack: dict, prompt_template: str, style: str) -> ExplanationResult`
-- Takes a context-pack and a prompt template.
-- Calls the configured AI provider.
-- Returns structured explanation with citations and confidence.
-- Times out and falls back if AI service is slow or unavailable.
-
-**Internal Methods**:
-- `extract_citations(ai_response: str, context_pack: dict) -> list[Citation]`
-- `validate_hallucination_risk(response: str, context_pack: dict) -> bool`
-
----
-
-### 7.4 Explanation Endpoints
-
-**Responsibility**: Expose AI explanation capabilities through the API.
-
-**Files/Modules**:
-- `backend/app/routers/explanations.py`
-
-**Proposed Endpoints**:
-
-```
-POST /api/explanations/change-safety-detail
-  Input: service_id, change_type
-  Output: explanation of why each checklist item matters, grounded in incidents and flows
-
-GET /api/explanations/glossary/{term}
-  Input: term
-  Output: glossary definition + platform examples from flows, services, incidents
-
-POST /api/ask-the-platform/augmented
-  Input: question, intent
-  Output: deterministic answer + AI-generated explanation and context
-
-POST /api/explanations/onboarding-phase
-  Input: role, phase_number
-  Output: explanation of why this phase is important
-```
-
-All endpoints:
-- Return AI capability status (enabled/disabled).
-- Include citation IDs.
-- Include response generation time and provider.
-- Gracefully degrade to deterministic-only if AI is disabled or fails.
-
----
-
-## 8. Proposed Frontend Changes
-
-### 8.1 Explanation UI Pattern
-
-Add an optional "Explain" or "Why?" button next to deterministic outputs:
-
-- Change-safety checklist: "Explain why this step matters" → generates AI explanation for that step
-- Glossary entries: "Show platform examples" → retrieves AI-augmented examples
-- Onboarding paths: "Why this phase?" → explains learning architecture
-- Ask results: "Elaborate" → generates deeper AI explanation
-
-Design approach:
-- Explanations appear in a side panel or collapsible section (non-intrusive).
-- Always show the deterministic result first.
-- Make AI explanations clearly labeled and differentiated from core guidance.
-- Include "Powered by Vertex AI" or equivalent provider attribution.
-
-### 8.2 Citation Display
-
-When AI explanation is shown, include inline citations:
-
-```
-The routing change will impact 3 critical flows:
-  - Outbound SWIFT pacs.008 transfers [flow-001]
-  - Inbound status updates [flow-002]
-  - Exception investigations [flow-004]
-
-All three flows were involved in incident INC-2024-0042 [incident link].
-```
-
-Users can click cited entities to navigate to deterministic details.
-
-### 8.3 Disabled/Degraded Behavior
-
-If AI is disabled:
-- No "Explain" buttons appear.
-- Ask the Platform works deterministically only.
-- No user-facing AI attribution.
-
-If AI is available but slow:
-- Show "Loading explanation..." state.
-- Allow user to skip waiting.
-- Gracefully show deterministic answer while fetching explanation.
-
----
-
-## 9. Provider Strategy
-
-### Default: No AI Provider Required
-
-The application works fully without any AI provider. This is the MVP production default.
-
-### When AI is Enabled
-
-Priority order:
-
-1. **Vertex AI (Google Cloud)**: Preferred for public Google Cloud deployments.
-   - Uses `google.cloud.aiplatform`
-   - Minimal additional infrastructure.
-   - Data privacy aligned with Cloud Run hosting.
-
-2. **OpenAI API**: Optional fallback.
-   - For teams already using OpenAI.
-   - Requires separate API key management.
-   - Consider data residency implications.
-
-### No Other Providers
-
-- No local LLM models (complexity and maintenance burden).
-- No proprietary in-house models (out of scope for a public reference implementation).
-- No embedding services for now (future enhancement if RAG complexity increases).
-
-### Provider Selection Logic
+Responsibility: Assemble context-packs from retrieved entities.
 
 ```python
-if AI_ENABLED:
-  if VERTEX_AI_PROJECT_ID:
-    use Vertex AI
-  elif OPENAI_API_KEY:
-    use OpenAI
-  else:
-    disable AI, warn in logs
+class ContextPackBuilder:
+    def build_for_change_safety(self, service_id: str, change_type: str) -> ContextPack
+    def build_for_flow_explanation(self, flow_id: str, step_number: int) -> ContextPack
+    def build_for_service_explanation(self, service_id: str) -> ContextPack
+    def build_for_glossary_term(self, term: str) -> ContextPack
+    def validate_completeness(self, context_pack: ContextPack) -> CompletionScore
+```
+
+### ai_provider_service.py
+
+Responsibility: Manage AI provider configuration and selection.
+
+```python
+class AIProviderService:
+    def is_enabled(self) -> bool
+    def get_provider(self) -> AIProvider
+    def health_check(self) -> bool
+    def list_supported_providers(self) -> List[str]
+```
+
+### ai_explainer_service.py
+
+Responsibility: Call the AI provider with context-pack and prompt.
+
+```python
+class AIExplainerService:
+    def explain_change_safety_step(self, context_pack: ContextPack, step_id: str) -> ExplanationResult
+    def explain_flow_step(self, context_pack: ContextPack, step_number: int) -> ExplanationResult
+    def explain_service(self, context_pack: ContextPack) -> ExplanationResult
+    def explain_glossary_term(self, context_pack: ContextPack) -> ExplanationResult
+    def validate_citations(self, response: str, context_pack: ContextPack) -> ValidationResult
+```
+
+### Provider Interface
+
+All providers must implement:
+
+```python
+class AIProvider:
+    def call(self, system_prompt: str, user_message: str, context_pack: ContextPack) -> AIResponse
+    def health_check(self) -> bool
+    def supports_feature(self, feature: str) -> bool
+```
+
+### Gemini Provider (Vertex AI)
+
+```python
+class GeminiProvider(AIProvider):
+    def __init__(self, project_id: str, location: str, model: str)
+    def call(self, system_prompt: str, user_message: str, context_pack: ContextPack) -> AIResponse
+```
+
+### OpenAI Provider (Optional)
+
+```python
+class OpenAIProvider(AIProvider):
+    def __init__(self, api_key: str, model: str)
+    def call(self, system_prompt: str, user_message: str, context_pack: ContextPack) -> AIResponse
+```
+
+### Updated /api/ask Endpoint
+
+```python
+@app.post("/api/ask")
+async def ask_platform(
+    question: str,
+    mode: str = "deterministic",  # "deterministic" or "explain"
+    service_id: Optional[str] = None,
+    flow_id: Optional[str] = None
+) -> AskResponse:
+    # mode="deterministic" → current behavior, no AI
+    # mode="explain" → deterministic answer + AI explanation
 ```
 
 ---
 
-## 10. Environment Variables
+## 9. Frontend Changes for Later Phases
 
-### Feature Flags
+These UI changes will be implemented in future phases (not in Phase 9A):
+
+### Answer Mode Toggle
+
+Add a toggle in the Ask-the-Platform result screen:
+- Option: "Show deterministic answer only"
+- Option: "Show with AI-assisted explanation"
+- Default: "Deterministic only" (matches `ENABLE_AI_EXPLANATIONS=false`)
+
+### Clear Synthetic-Data Notice
+
+When AI explanation is shown, include:
+> This explanation is generated from the synthetic Payments Platform knowledge base. This is a fictional reference implementation, not a real bank system.
+
+### Source Files Shown
+
+Display which data files the explanation is grounded in:
+```
+Sources: data/services.yaml, data/incidents.json, data/runbooks.yaml
+```
+
+### Confidence Shown
+
+Display confidence score:
+```
+Confidence: 92%
+(Based on matched entities and data completeness)
+```
+
+### Guardrail Notes Shown
+
+If explanation contains uncertainty or limitations:
+```
+Note: This explanation covers the primary flow. Edge cases in 
+exceptional scenarios are not modeled here. See RB-ROUTING-TIMEOUT 
+for operational details.
+```
+
+### Disabled State (When AI Not Configured)
+
+If `ENABLE_AI_EXPLANATIONS=false`:
+- No "Explain" buttons appear
+- Ask-the-Platform works deterministically only
+- No user-facing indication that AI capability exists
+
+---
+
+## 10. Provider Strategy
+
+### Default Provider: None
+
+The application ships with no AI provider required or configured.
+
+- `ENABLE_AI_EXPLANATIONS=false` (default)
+- `AI_PROVIDER=none` (default)
+- App runs fully on deterministic mode only
+
+### First Cloud Provider: Vertex AI Gemini
+
+If and when AI is enabled, Vertex AI (Google Cloud) is the preferred first provider because:
+
+- The application is deployed on Google Cloud Run
+- Vertex AI is native to the same cloud environment
+- Data stays within Google Cloud infrastructure
+- Billing integrates with existing GCP project
+- No separate API key management needed (uses Cloud authentication)
+
+Configuration:
+```
+ENABLE_AI_EXPLANATIONS=true
+AI_PROVIDER=vertex-ai
+GOOGLE_CLOUD_PROJECT=<project-id>
+GOOGLE_CLOUD_LOCATION=europe-west2
+VERTEX_AI_MODEL=gemini-1.5-pro
+```
+
+### Optional Later Provider: OpenAI
+
+OpenAI is an optional fallback provider for teams that:
+- Already use OpenAI for other projects
+- Have existing OpenAI infrastructure
+- Prefer a non-Google provider
+
+Configuration:
+```
+ENABLE_AI_EXPLANATIONS=true
+AI_PROVIDER=openai
+OPENAI_API_KEY=<from-secret-manager>
+OPENAI_MODEL=gpt-4-turbo
+```
+
+### Provider Swappability
+
+The AI provider interface is designed to be swappable:
+- Core logic doesn't depend on specific provider
+- Adding a new provider requires implementing `AIProvider` interface
+- Provider selection happens at startup based on environment variables
+- If selected provider is unavailable, app falls back to deterministic-only
+
+### App Works Without Any AI Provider
+
+This is non-negotiable. The entire application—backend, frontend, tests, deployment—works without `ENABLE_AI_EXPLANATIONS=true`. No developer is forced to use or understand AI infrastructure to contribute.
+
+---
+
+## 11. Environment Variables
+
+### Feature Enablement
 
 ```
-# AI feature enablement (default: false)
-AI_ENABLED=false
+# Default: false
+# Set to true only if AI provider is configured
+ENABLE_AI_EXPLANATIONS=false
 
-# AI explanation max length in tokens (default: 500)
-AI_EXPLANATION_MAX_TOKENS=500
+# Default: none
+# Options: none, vertex-ai, openai
+AI_PROVIDER=none
 
-# Require citations for all AI claims (default: true)
-AI_REQUIRE_CITATIONS=true
-
-# AI response timeout in seconds (default: 5)
-AI_RESPONSE_TIMEOUT_SECONDS=5
+# Default: unset
+# Only required if AI is enabled
+AI_MODEL=gemini-1.5-pro
 ```
 
 ### Vertex AI Configuration
 
 ```
-# Google Cloud project ID (if using Vertex AI)
-VERTEX_AI_PROJECT_ID=<gcp-project>
+# Required if AI_PROVIDER=vertex-ai
+GOOGLE_CLOUD_PROJECT=<gcp-project-id>
 
-# Vertex AI location (default: us-central1)
-VERTEX_AI_LOCATION=us-central1
+# Default: europe-west2
+# Set to nearest GCP region for your deployment
+GOOGLE_CLOUD_LOCATION=europe-west2
 
-# Vertex AI model (default: gemini-1.5-pro)
+# Optional: override model
 VERTEX_AI_MODEL=gemini-1.5-pro
 ```
 
 ### OpenAI Configuration (Optional)
 
 ```
-# OpenAI API key (if using OpenAI as fallback)
-OPENAI_API_KEY=<key>
+# Required if AI_PROVIDER=openai
+# Must be injected via Secret Manager, not committed to code
+OPENAI_API_KEY=<key-from-secret-manager>
 
-# OpenAI model (default: gpt-4-turbo)
+# Optional: override model
 OPENAI_MODEL=gpt-4-turbo
 ```
 
-### Logging and Observability
+### Advanced Configuration
 
 ```
-# Log all AI requests and responses (default: false)
-AI_VERBOSE_LOGGING=false
+# Default: 5 seconds
+# Maximum time to wait for AI response before timeout
+AI_RESPONSE_TIMEOUT_SECONDS=5
 
-# Require minimum confidence score for AI responses (default: 0.8)
-AI_MIN_CONFIDENCE=0.8
+# Default: 0.8
+# Minimum confidence threshold to show explanation
+AI_MIN_CONFIDENCE_THRESHOLD=0.8
+
+# Default: false
+# Enable detailed logging of AI requests/responses (for debugging)
+AI_VERBOSE_LOGGING=false
 ```
 
 ---
 
-## 11. Secret Handling Principles
+## 12. Secret Handling
 
-### Credential Storage
+### Principle: No Secrets in GitHub
 
-- **Development**: Environment variables in `.env` (Git-ignored).
-- **Cloud Run**: Use Google Cloud Secret Manager. Cloud Run injects via environment binding.
-- **Secrets** must never be hardcoded or logged.
+API keys, credentials, and secrets must never be committed to the repository.
+
+### Local Development
+
+For local testing with Vertex AI:
+```bash
+export GOOGLE_CLOUD_PROJECT=<your-project>
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
+```
+
+The `GOOGLE_APPLICATION_CREDENTIALS` file must be:
+- Generated from a GCP service account
+- Added to `.gitignore`
+- Never committed to GitHub
+
+For local testing with OpenAI:
+```bash
+export OPENAI_API_KEY=sk-...
+```
+
+This must be:
+- Set in local `.env` (which is `.gitignore`'d)
+- Never committed to GitHub
+
+### Cloud Run Deployment
+
+Secrets are injected into Cloud Run environment at deployment time.
+
+Google Cloud Secret Manager:
+```bash
+# Create secret
+gcloud secrets create openai-api-key --data-file=- <<< "sk-..."
+
+# Grant Cloud Run service account access
+gcloud secrets add-iam-policy-binding openai-api-key \
+  --member=serviceAccount:payments-navigator@<project>.iam.gserviceaccount.com \
+  --role=roles/secretmanager.secretAccessor
+
+# Update Cloud Run to inject secret
+gcloud run deploy payments-platform-navigator \
+  --set-env-vars OPENAI_API_KEY=projects/<project>/secrets/openai-api-key/latest
+```
+
+Vertex AI uses Cloud authentication directly (no explicit API key).
 
 ### Audit Trail
 
-- Every AI API call should be logged with:
-  - Timestamp
-  - User context (if available)
-  - Query intent
-  - Response generation time
-  - Provider used
-  - Confidence score
+Every AI API call is logged with:
+- Timestamp
+- User context (if available)
+- Query intent
+- Response generation time
+- Provider used
+- Result status (success, timeout, failure)
 
-- Audit logs must be retained for at least 90 days.
-- Do not log the full AI response if it contains sensitive inference (unlikely given synthetic data).
+Logs must be retained for 90 days for compliance review.
 
-### Data Residency
+### Principles
 
-- If using Vertex AI on Google Cloud, data stays within Google Cloud.
-- If using OpenAI, data is sent to OpenAI's infrastructure (different data residency).
-- Clearly document this difference in deployment guides.
-
----
-
-## 12. Local Development Behavior
-
-### Default (AI Disabled)
-
-```bash
-cd payments-platform-navigator
-python backend/app/main.py
-```
-
-Application runs with full deterministic functionality, no AI dependencies.
-
-### With Vertex AI Emulator (Future)
-
-```bash
-export AI_ENABLED=true
-export VERTEX_AI_PROJECT_ID=local-testing
-python backend/app/main.py
-```
-
-Backend attempts to use Vertex AI. If unavailable, logs warning and falls back to deterministic-only.
-
-### Testing
-
-```bash
-# Unit tests must not require AI
-pytest backend/tests/test_backend.py
-
-# Integration tests can mock AI responses
-pytest backend/tests/test_explanations.py --mock-ai
-```
+- **Never commit secrets**: Zero tolerance policy
+- **Use Secret Manager**: Not environment files
+- **Principle of least privilege**: Service account can only access secrets it needs
+- **Rotation**: API keys rotated quarterly
+- **Audit**: All secret access is logged
 
 ---
 
-## 13. Cloud Run Deployment Behavior
+## 13. Evaluation Strategy
 
-### Startup
+Before any AI explanation is shown to users, it must pass evaluation gates:
 
-1. Cloud Run injects `PORT` (default 8080).
-2. Backend loads synthetic data files.
-3. Backend reads `AI_ENABLED` flag.
-4. If AI enabled, reads `VERTEX_AI_PROJECT_ID` from Secret Manager binding.
-5. Initializes Vertex AI client (or logs warning if credentials unavailable).
-6. FastAPI starts on `0.0.0.0:${PORT}`.
+### Supported Questions
 
-### Health Check
+For each supported question type (change safety, flow explanation, service explanation, glossary explanation, onboarding guidance):
 
-`GET /health` returns:
+1. **Source Citations**: Every claim must reference source files
+   - Service claims cite `data/services.yaml`
+   - Flow claims cite `data/payment-flows.yaml`
+   - Incident claims cite `data/incidents.json`
+   - Runbook claims cite `data/runbooks.yaml`
 
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-05-10T14:30:00Z",
-  "ai": {
-    "enabled": true,
-    "provider": "vertex-ai",
-    "available": true
-  }
-}
+2. **No Invented Entities**: AI cannot claim something exists if it's not in the data
+   - No service inventions
+   - No flow inventions
+   - No incident inventions
+   - Validation: check against real data files
+
+3. **Accuracy Against Source**: Claims must match the source data
+   - Service description accuracy >95%
+   - Risk description accuracy >95%
+   - Incident detail accuracy >95%
+
+### Unsupported Questions
+
+When the user asks an out-of-scope question:
+
+1. **Safe Refusal**: AI declines clearly
+   - "I only know about this synthetic platform"
+   - "I can't answer questions about real banking"
+   - "See external resources for regulatory details"
+
+2. **Boundary Clarity**: AI explains what it *can* help with
+   - "I can explain how this platform models payment validation"
+   - "I can't compare our synthetic system to real banks"
+
+3. **Graceful Redirection**: AI suggests alternatives
+   - "Try asking about specific services or flows"
+   - "Check the glossary for payment terms"
+
+### Regression Tests
+
+Test suite must cover:
+
+```python
+def test_ai_refuses_real_bank_questions():
+    # Verify AI refuses to answer about real banks
+    
+def test_ai_refuses_regulatory_questions():
+    # Verify AI refuses to give legal/regulatory advice
+    
+def test_ai_refuses_real_data_questions():
+    # Verify AI refuses to answer about customer data
+    
+def test_ai_cites_all_claims():
+    # Verify every explanation cites source files
+    
+def test_ai_does_not_invent_services():
+    # Verify AI doesn't claim non-existent services
+    
+def test_ai_preserves_synthetic_disclaimer():
+    # Verify explanations include synthetic data notice
+    
+def test_ai_confidence_degrades_with_weak_context():
+    # Verify confidence score reflects context quality
 ```
 
-Users and monitoring systems can detect whether AI is available at deployment time.
+### Human Review
 
-### Rollback
+Before deploying to production:
 
-If an AI provider becomes unavailable:
-- Explanation endpoints return 503 Service Unavailable (AI not available).
-- Deterministic endpoints continue to work.
-- Monitoring alert triggers.
-- No user-facing impact to core functionality.
-
----
-
-## 14. Evaluation Strategy
-
-### Before Publishing Explanations
-
-Each AI-generated explanation must be evaluated for:
-
-1. **Hallucination Risk**: Does every claim come from the context-pack?
-2. **Relevance**: Does the explanation actually answer the user's question?
-3. **Completeness**: Are critical related concepts missing?
-4. **Citation Accuracy**: Do all inline citations link to real source data?
-5. **Tone**: Does the explanation match payments-engineering professionalism?
-
-### Evaluation Process
-
-```
-User requests explanation
-  ↓
-Backend generates explanation with citations
-  ↓
-Frontend displays explanation
-  ↓
-User provides feedback: "Was this helpful? Accurate? Complete?"
-  ↓
-Feedback collected (if telemetry enabled)
-  ↓
-Weekly review of low-confidence or questioned explanations
-  ↓
-If pattern emerges: refine prompt or update source data
-```
-
-### Feedback Mechanisms
-
-- "Helpful / Not helpful" button on each explanation.
-- "Report hallucination" link for incorrect claims.
-- Backend logs which explanations receive negative feedback.
-- Weekly report on explanation quality metrics.
-
-### Data Quality Checks
-
-If AI suggests a missing or unclear concept:
-- Instead of hallucinating, AI says: "The data I have doesn't cover this. You might want to consult [relevant runbook]."
-- Log suggestion as potential data model gap.
-- Evaluate whether source YAML/JSON should be updated to cover the gap.
+1. **Sample Review**: 50+ sample explanations reviewed by human
+2. **Quality Checks**: Accuracy, citations, tone, boundaries
+3. **Edge Case Testing**: Unusual questions, ambiguous requests, unusual data
+4. **Failure Mode Testing**: What happens when AI service is down?
 
 ---
 
-## 15. Rollout Plan
+## 14. Rollout Plan
 
-### Phase 1: Documentation and Design Review
+### Phase 9A: AI Design Documents (Current)
 
-- Publish this document.
-- Gather feedback from stakeholders.
-- Review for security and data-safety implications.
-- No code changes.
+**Deliverables**:
+- docs/ai-design.md ✓
+- docs/ai-prompting-strategy.md ✓
+- docs/ai-risk-and-guardrails.md ✓
+- docs/decision-log.md Decision 013 ✓
 
-### Phase 2: Backend Infrastructure (If Approved)
+**Duration**: Week 1
 
-- Implement context-pack builder.
-- Implement AI config service.
-- Implement AI explainer service with mock provider.
-- Add explanation endpoints (returning mock AI responses).
-- Full test coverage of context-pack assembly.
-- No real AI calls yet. No frontend changes.
-
-### Phase 3: Provider Integration (If Approved)
-
-- Integrate Vertex AI client.
-- Add OpenAI client as optional fallback.
-- Update health checks.
-- Test with real AI provider in development/staging.
-- Real AI responses appear in logs, not UI.
-- Documentation updated.
-
-### Phase 4: Frontend Integration (If Approved)
-
-- Add "Explain" buttons to UI.
-- Add explanation side panels.
-- Test citation display.
-- User testing with small cohort.
-- Collect feedback on explanation quality.
-
-### Phase 5: Production Rollout (If Approved)
-
-- Deploy to Cloud Run with AI disabled by default.
-- Monitor health checks and error logs.
-- Gradually enable AI for subset of users.
-- Collect feedback over 2 weeks.
-- If quality is good: enable for all users.
-- If quality is poor: disable, refine prompts, re-evaluate.
-
-### Abort Criteria
-
-At any phase:
-- Explanation quality drops below 80% accuracy.
-- AI hallucinations are frequent (>5% of explanations).
-- Response latency exceeds 3 seconds (poor user experience).
-- AI costs exceed forecast.
-- Security concerns arise.
-
-If abort triggered:
-- Disable AI immediately.
-- Users revert to deterministic-only (no user impact).
-- Investigate root cause.
-- Return to deterministic architecture.
+**Success Criteria**: Design documents reviewed and approved
 
 ---
 
-## 16. Success Metrics
+### Phase 9B: Context-Pack Builder (Future)
 
-### Quality Metrics
+**Deliverables**:
+- `backend/app/context_pack_service.py`
+- Unit tests for context-pack assembly
+- Integration tests with existing data loader
 
-- Explanation accuracy: >95% (evaluated on sample set).
-- Citation accuracy: 100% (all claims traceable to source data).
-- Hallucination rate: <1% (AI making false claims about platform).
-- User satisfaction: >4/5 on "Was this helpful?" rating.
+**Duration**: Week 2
 
-### Performance Metrics
-
-- Explanation generation time: <2 seconds p95.
-- Explanation API availability: >99.5%.
-- Fallback to deterministic-only: <1% of requests.
-
-### Adoption Metrics
-
-- % of users who view explanations: >30%.
-- Repeat users who use explanations: >50%.
-- Negative feedback rate: <5%.
-
-### Business Metrics
-
-- User satisfaction with Ask the Platform (with explanation): >4/5.
-- Time-to-answer for complex questions: reduced by >30%.
-- Engagement with onboarding paths: increased.
-- Churn rate for new engineers: stable or improved.
+**Success Criteria**: Context-packs generated correctly for all question types
 
 ---
 
-## 17. Future Enhancements (Out of Scope)
+### Phase 9C: Provider Abstraction (Future)
 
-These are intentionally not part of the initial AI design:
+**Deliverables**:
+- `backend/app/ai_provider_service.py`
+- `backend/app/providers/base.py` (AIProvider interface)
+- `backend/app/providers/mock.py` (mock provider for testing)
 
-- **Stateful conversation**: Multi-turn dialogue where context persists across questions.
-- **RAG at scale**: Retrieval-augmented generation against external documentation corpus.
-- **Custom fine-tuning**: Training AI on historical Q&A from this specific platform.
-- **Interactive debugging**: AI helping engineer diagnose a live incident.
-- **Autonomous change approval**: AI suggesting or approving changes (human stays in control).
-- **Real-time operational dashboards**: AI analyzing live logs and metrics (requires live data connection).
+**Duration**: Week 3
 
-These require significant additional architecture and safety measures.
+**Success Criteria**: Providers are swappable, mock provider works
+
+---
+
+### Phase 9D: Vertex AI Integration (Future)
+
+**Deliverables**:
+- `backend/app/providers/vertex_ai.py`
+- Integration with Google Cloud Vertex AI SDK
+- Configuration for europe-west2 location
+- Health checks and fallback logic
+
+**Duration**: Week 4
+
+**Success Criteria**: Real Vertex AI calls succeed, timeouts handled gracefully
+
+---
+
+### Phase 9E: Frontend UI Toggle (Future)
+
+**Deliverables**:
+- "Show AI explanation" toggle in Ask-the-Platform
+- Conditional rendering if AI is enabled
+- Source files and confidence display
+- Guardrail notes display
+- Synthetic data disclaimer
+
+**Duration**: Week 5
+
+**Success Criteria**: UI works with and without AI enabled
+
+---
+
+### Phase 9F: Evaluation and Testing (Future)
+
+**Deliverables**:
+- Regression test suite (no-answer, hallucination, citations)
+- Evaluation of 50+ sample explanations
+- Documentation of quality standards
+- Failure mode testing
+
+**Duration**: Week 6
+
+**Success Criteria**: All evaluation gates passed, <1% hallucination rate
+
+---
+
+### Phase 9G: Cloud Run Secret Configuration (Future)
+
+**Deliverables**:
+- Cloud Run service account configuration
+- Secret Manager bindings
+- Deployment documentation
+- Audit log setup
+
+**Duration**: Week 7
+
+**Success Criteria**: Cloud Run deployment with AI enabled, secrets properly secured
+
+---
+
+### Go/No-Go Decision Gates
+
+After Phase 9F (evaluation):
+
+**Go Criteria**:
+- Hallucination rate <1%
+- Citation accuracy 100%
+- Explanation relevance >95%
+- User confusion/misunderstanding <5%
+- Response time <2 seconds (p95)
+
+**No-Go Criteria** (If met, return to design or disable AI):
+- Hallucination rate >2%
+- Citation accuracy <99%
+- Explanation relevance <90%
+- User confusion >10%
+- Response time >5 seconds
+
+### Abort Decision
+
+At any phase, if:
+- A security vulnerability is discovered
+- Hallucinations become frequent (>5% of responses)
+- Quality metrics drop below targets
+- Prompt injection vulnerabilities emerge
+
+Then: Disable AI immediately, revert to deterministic-only mode, investigate root cause.
 
 ---
 
 ## Summary
 
-This design preserves the deterministic, structured, payment-engineering-focused core of Payments Platform Navigator while adding an optional, grounded AI-explanation layer. The AI is a *helper and explainer*, not a decision-maker. All core guidance remains sourced from deterministic logic applied to synthetic structured data.
+This document defines the architecture for an optional, retrieval-grounded AI-assisted explanation layer for Payments Platform Navigator.
 
-The design is cautious: AI is disabled by default, providers are optional, fallback to deterministic-only is automatic, and evaluation gates any expansion beyond explanations.
+The core principles are:
+1. **Retrieval first** — AI only explains what has been retrieved
+2. **Deterministic is source of truth** — AI never overrides structured decisions
+3. **Disabled by default** — App works fully without any AI provider
+4. **Source-aware** — All claims cite synthetic data
+5. **Safe for public portfolio** — Synthetic data only, no confidential information
+6. **Cloud Run compatible** — Works within GCP constraints
+
+No code is implemented in Phase 9A. All implementation is deferred to future phases with clear go/no-go decision gates.
