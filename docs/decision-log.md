@@ -1,5 +1,22 @@
 # Decision Log
 
+## 011 — Use relative API paths for single-container Cloud Run deployment
+
+Date: 2026-05-10
+
+Status: Accepted
+
+Decision: The React frontend will use relative API paths in production unless `VITE_API_BASE_URL` is explicitly configured.
+
+Rationale: In local Vite development, `http://localhost:8080` correctly points to the developer's FastAPI backend. In a deployed Cloud Run browser session, `localhost` refers to the user's machine, not the Cloud Run service. Because the MVP container serves the frontend and backend from the same FastAPI origin, production builds should default to relative paths such as `/api/services`.
+
+Consequences:
+
+- Local development continues to default to `http://localhost:8080`.
+- Single-container Cloud Run deployments call same-origin backend routes by default.
+- Explicit `VITE_API_BASE_URL` values still override the default for split-origin deployments.
+- No backend, database, authentication, or external AI changes are required.
+
 ## 010 — Package frontend and backend into a single Cloud Run container
 
 Date: 2026-05-09

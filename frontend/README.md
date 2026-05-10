@@ -20,16 +20,24 @@ cd backend
 uvicorn app.main:app --host 0.0.0.0 --port 8080
 ```
 
-The frontend expects the backend API at:
+During local Vite development, the frontend defaults to the backend API at:
 
 ```text
 http://localhost:8080
 ```
 
-Override with:
+For production builds, if `VITE_API_BASE_URL` is not set, the frontend uses relative API paths such as `/api/services`. This is the expected mode for the single-container Cloud Run deployment where FastAPI serves both the frontend and backend from the same origin.
+
+Override the API base URL explicitly when needed:
 
 ```bash
 VITE_API_BASE_URL=http://localhost:8080 npm run dev
+```
+
+For a production build that targets a separate API origin:
+
+```bash
+VITE_API_BASE_URL=https://example-api-service npm run build
 ```
 
 ## Run
