@@ -1,4 +1,5 @@
 import type {
+  AskRequest,
   AskResponse,
   ChangeSafetyRequest,
   ChangeSafetyResponse,
@@ -57,11 +58,13 @@ export const api = {
       `/api/onboarding?role=${encodeURIComponent(role)}&area=${encodeURIComponent(area)}`,
     ),
   knowledgeHealth: () => request<KnowledgeHealth>('/api/knowledge-health'),
-  ask: (question: string) =>
-    request<AskResponse>('/api/ask', {
+  ask: (input: AskRequest | string) => {
+    const payload = typeof input === 'string' ? { question: input } : input;
+    return request<AskResponse>('/api/ask', {
       method: 'POST',
-      body: JSON.stringify({ question }),
-    }),
+      body: JSON.stringify(payload),
+    });
+  },
   changeSafety: (payload: ChangeSafetyRequest) =>
     request<ChangeSafetyResponse>('/api/change-safety-checklist', {
       method: 'POST',

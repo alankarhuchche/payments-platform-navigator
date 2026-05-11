@@ -71,6 +71,14 @@ This demonstrates the product thesis: in payments platforms, connected engineeri
 
    Ask: "What can break in outbound pacs.008?" Explain that MVP answers are deterministic and source-backed. Show the supporting evidence links and limitations.
 
+   **Optional AI-assisted Mode**: If the deployment has AI enabled (requires `ENABLE_AI_EXPLANATIONS=true` and a configured provider such as Vertex AI Gemini), demonstrate the AI-assisted mode toggle:
+   - Show the "Answer mode" selector with "Deterministic" (default) and "AI-assisted" options.
+   - Select "AI-assisted" and re-ask the same question.
+   - Show the AI explanation section (grounded in synthetic data) with confidence score.
+   - Explain that the AI explanation augments the deterministic answer and is grounded only in the synthetic knowledge base.
+   - Point out the safety disclaimer: "AI-assisted answers are generated only from the synthetic Payments Platform Navigator knowledge base."
+   - If desired, show a scenario where AI is disabled: the mode selector shows only "Deterministic" and a warning explains why.
+
 7. Open Change Safety Checklist.
 
    Use a change such as "Update validation rule pack for pacs.009 settlement fields" with `svc-payment-validation`, `flow-outbound-pacs009`, `api-payment-validation`, `payment.validated`, and `payment.validation_failed`. Show the generated impact, contract, regression, runbook, incident learning, monitoring, rollback, and evidence sections.
