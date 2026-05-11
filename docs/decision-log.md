@@ -1,5 +1,28 @@
 # Decision Log
 
+## 017 — Fix Gemini provider to use current google-genai client API
+
+Date: 2026-05-11
+
+Status: Accepted
+
+Decision: Fix the VertexGeminiProvider implementation to use the current google-genai SDK API pattern. The new SDK uses `from google import genai` with `genai.Client()` instead of the deprecated `genai.configure()` pattern. The SDK automatically picks up `GEMINI_API_KEY` or `GOOGLE_API_KEY` from environment variables without explicit configuration.
+
+Rationale: The initial Gemini provider implementation used an outdated SDK pattern that no longer works with the current google-genai version. The new SDK is simpler, automatically handles API key discovery from environment variables, and is the supported pattern going forward. Updating to the new pattern fixes the Cloud Run deployment error while maintaining all existing guarantees about safety, testing, and deterministic fallback.
+
+Consequences:
+
+- Updated `VertexGeminiProvider._get_client()` to use `genai.Client()` instead of `genai.configure()`.
+- Updated `VertexGeminiProvider.explain()` to call `client.models.generate_content(model=..., contents=...)` instead of `model.generate_content()`.
+- Removed `_get_model()` method; Client is now the only SDK object needed.
+- API key validation is done before Client creation to provide clear error messages.
+- All guardrails, context-pack-only prompting, JSON parsing, and deterministic fallback behavior are preserved.
+- Tests updated to verify the provider uses the new SDK API and does not call the deprecated configure method.
+- No breaking changes to the provider interface or behavior; only internal SDK usage is modified.
+- Cloud Run deployments with GEMINI_API_KEY environment variable now work correctly.
+
+---
+
 ## 016 — Add optional Vertex AI Gemini provider behind disabled-by-default configuration
 
 Date: 2026-05-11
