@@ -1,5 +1,30 @@
 # Decision Log
 
+## 018 — Add AI-assisted explanation mode to frontend Ask page
+
+Date: 2026-05-11
+
+Status: Accepted
+
+Decision: Phase 9E will add an optional AI-assisted explanation mode to the React frontend Ask page. Users can choose between "Deterministic" (rule-based, default) and "AI-assisted" (grounded AI explanation) answer modes via radio button selector. Both answers are displayed side-by-side when AI is enabled, with the deterministic answer as the baseline and source of truth. The UI includes safety disclaimers, guardrail notes, confidence scores, and provider attribution. When AI is disabled (default), only the deterministic mode is available and the UI remains unchanged.
+
+Rationale: The frontend previously supported only deterministic answers. Adding an optional, user-selectable AI mode demonstrates the complete retrieval-grounded AI assistant capability while preserving the deterministic behavior as the default. The mode selector is clear, the safety messaging is prominent, and fallback to deterministic answers is automatic if the AI provider fails. Frontend secrets and API keys are never exposed; all AI calls are made by the backend.
+
+Consequences:
+
+- Frontend types updated: AskRequest type with optional `mode` parameter ("deterministic" | "ai_assisted"), AiStatus type for AI provider status, AskResponse extended with optional ai_explanation, ai_confidence, ai_mode, and ai_status fields.
+- Frontend API client updated: api.ask() now accepts AskRequest | string for backward compatibility, sends complete payload with mode parameter to POST /api/ask.
+- AskPage component updated: Added mode state initialized to 'deterministic', added radio button selector fieldset for Deterministic/AI-assisted choice, added safety disclaimer note about synthetic data grounding.
+- AskPage component rendering: Modified submit to send {question, mode} to backend, added conditional rendering for AI unavailable warning card, AI explanation section (when ai_explanation exists and AI is available), deterministic answer section (always displayed as baseline).
+- CSS styling added: .mode-selector, .radio-label, .safety-note, .ai-answer-card, .guardrail-note, .warning-card, .subtle for new UI components.
+- TypeScript configuration updated: Changed moduleResolution from "Node" to "bundler" for compatibility with modern TypeScript versions.
+- Frontend build: All TypeScript compilation succeeds, no errors.
+- Backend tests: All 71 tests pass, no regressions from frontend changes.
+- Documentation updated: frontend/README.md with deterministic vs AI-assisted mode explanations, docs/demo-script.md with optional AI-assisted mode demo section.
+- All 9 acceptance criteria met: (1) AskRequest type with mode parameter, (2) Radio button selector UI, (3) Mode state in AskPage, (4) Conditional rendering of AI explanation, (5) Safety disclaimer displayed, (6) Guardrail notes and confidence score shown, (7) Provider attribution, (8) Warning card for unavailable AI, (9) Documentation updated.
+
+---
+
 ## 017 — Fix Gemini provider to use current google-genai client API
 
 Date: 2026-05-11

@@ -15,6 +15,7 @@ const examples = [
 
 export function AskPage() {
   const [question, setQuestion] = useState(examples[0]);
+  const [mode, setMode] = useState<'deterministic' | 'ai_assisted'>('deterministic');
   const [answer, setAnswer] = useState<AskResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -22,7 +23,7 @@ export function AskPage() {
   const submit = () => {
     setLoading(true);
     setError(null);
-    api.ask(question).then(setAnswer).catch(setError).finally(() => setLoading(false));
+    api.ask({ question, mode }).then(setAnswer).catch(setError).finally(() => setLoading(false));
   };
 
   return (
@@ -43,6 +44,39 @@ export function AskPage() {
             <button key={item} onClick={() => setQuestion(item)}>{item}</button>
           ))}
         </div>
+
+        <fieldset className="mode-selector">
+          <legend>Answer mode</legend>
+          <label className="radio-label">
+            <input
+              type="radio"
+              name="mode"
+              value="deterministic"
+              checked={mode === 'deterministic'}
+              onChange={() => setMode('deterministic')}
+              disabled={loading}
+            />
+            Deterministic
+            <span className="mode-description">Rule-based answer from structured synthetic data</span>
+          </label>
+          <label className="radio-label">
+            <input
+              type="radio"
+              name="mode"
+              value="ai_assisted"
+              checked={mode === 'ai_assisted'}
+              onChange={() => setMode('ai_assisted')}
+              disabled={loading}
+            />
+            AI-assisted
+            <span className="mode-description">Gemini explanation grounded in synthetic knowledge base</span>
+          </label>
+        </fieldset>
+
+        <div className="safety-note">
+          <p><strong>Note:</strong> AI-assisted answers are generated only from the synthetic Payments Platform Navigator knowledge base. They do not represent any real bank, real payment system, customer data, or production architecture.</p>
+        </div>
+
         <button className="primary-action" onClick={submit} disabled={loading || question.trim().length < 3}>
           Ask
         </button>
@@ -52,20 +86,49 @@ export function AskPage() {
       {error != null && <ErrorState error={error} />}
       {!loading && !error && !answer && <EmptyState title="No answer yet" message="Choose an example question or ask about a service, flow, runbook, or change." />}
       {answer && (
-        <section className="content-card answer-card">
-          <div className="card-heading-row">
-            <h3>Structured answer</h3>
-            <EntityBadge label={`confidence ${Math.round((answer.confidence || 0) * 100)}%`} tone={(answer.confidence || 0) > 0.6 ? 'green' : 'amber'} />
-          </div>
-          <p className="answer-summary">{answer.answer_summary}</p>
-          <AnswerList title="Matched entities" items={Object.entries(answer.matched_entities || {}).flatMap(([key, values]) => values.map((value) => `${key}: ${value}`))} />
-          <AnswerList title="Relevant services" items={answer.relevant_services} />
-          <AnswerList title="Relevant flows" items={answer.relevant_flows} />
-          <AnswerList title="Relevant runbooks" items={answer.relevant_runbooks} />
-          <AnswerList title="Risks" items={(answer.relevant_risks || []).map((risk) => `${risk.id}: ${risk.title}`)} />
-          <AnswerList title="Next steps" items={answer.suggested_next_steps} />
-          <AnswerList title="Source files" items={answer.source_files} />
-        </section>
+        <>
+          {answer.ai_status?.available === false && (
+            <section className="content-card warning-card">
+              <p><strong>AI-assisted mode not available:</strong> {answer.ai_status.reason || 'AI explanations are not configured for this deployment.'}</p>
+              <p>Showing deterministic answer from structured platform data.</p>
+            </section>
+          )}
+
+          {answer.ai_explanation && answer.ai_status?.available !== false && (
+            <section className="content-card ai-answer-card">
+              <div className="card-heading-row">
+                <h3>AI-assisted explanation</h3>
+                {answer.ai_confidence !== undefined && (
+                  <EntityBadge label={`confidence ${Math.round(answer.ai_confidence * 100)}%`} tone={answer.ai_confidence > 0.6 ? 'green' : 'amber'} />
+                )}
+              </div>
+              <p className="answer-summary">{answer.ai_explanation}</p>
+              {answer.ai_status?.guardrail_notes && (
+                <div className="guardrail-note">
+                  <p><strong>Guardrails:</strong> {answer.ai_status.guardrail_notes}</p>
+                </div>
+              )}
+              {answer.ai_status?.provider && (
+                <p className="subtle">Generated by {answer.ai_status.provider}</p>
+              )}
+            </section>
+          )}
+
+          <section className="content-card answer-card">
+            <div className="card-heading-row">
+              <h3>Deterministic answer</h3>
+              <EntityBadge label={`confidence ${Math.round((answer.confidence || 0) * 100)}%`} tone={(answer.confidence || 0) > 0.6 ? 'green' : 'amber'} />
+            </div>
+            <p className="answer-summary">{answer.answer_summary}</p>
+            <AnswerList title="Matched entities" items={Object.entries(answer.matched_entities || {}).flatMap(([key, values]) => values.map((value) => `${key}: ${value}`))} />
+            <AnswerList title="Relevant services" items={answer.relevant_services} />
+            <AnswerList title="Relevant flows" items={answer.relevant_flows} />
+            <AnswerList title="Relevant runbooks" items={answer.relevant_runbooks} />
+            <AnswerList title="Risks" items={(answer.relevant_risks || []).map((risk) => `${risk.id}: ${risk.title}`)} />
+            <AnswerList title="Next steps" items={answer.suggested_next_steps} />
+            <AnswerList title="Source files" items={answer.source_files} />
+          </section>
+        </>
       )}
     </section>
   );

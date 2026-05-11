@@ -140,6 +140,19 @@ export type KnowledgeHealth = {
   }>;
 };
 
+export type AskRequest = {
+  question: string;
+  mode?: 'deterministic' | 'ai_assisted';
+};
+
+export type AiStatus = {
+  mode?: string;
+  provider?: string;
+  available?: boolean;
+  guardrail_notes?: string;
+  reason?: string;
+};
+
 export type AskResponse = {
   answer_summary: string;
   matched_entities?: Record<string, string[]>;
@@ -150,6 +163,10 @@ export type AskResponse = {
   suggested_next_steps?: string[];
   confidence?: number;
   source_files?: string[];
+  ai_explanation?: string;
+  ai_confidence?: number;
+  ai_mode?: string;
+  ai_status?: AiStatus;
 };
 
 export type ChangeSafetyRequest = {
