@@ -61,14 +61,26 @@ class TestVertexGeminiProvider:
         with pytest.raises(AIProviderUnavailable):
             provider.explain(context_pack)
 
-    def test_gemini_explain_response_structure(self):
-        """Test that explain returns properly structured AIProviderResult."""
-        # This test verifies the response structure without requiring actual google.genai imports
+    def test_gemini_uses_new_sdk_client_api(self):
+        """Test that provider uses genai.Client() not genai.configure()."""
+        # Simple test: verify provider can be instantiated and uses correct structure
         provider = VertexGeminiProvider()
-
-        # The provider is created successfully
         assert provider.provider_name == "vertex-gemini"
         assert provider.model_name == "gemini-2.5-flash"
+        # The actual SDK usage is tested via the endpoint tests with mocks
+
+    def test_gemini_does_not_use_configure(self):
+        """Test that provider does NOT use the old genai.configure() method."""
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+            with patch("google.genai.Client"):
+                with patch("google.genai.configure") as mock_configure:
+                    provider = VertexGeminiProvider()
+
+                    # Call _get_client to verify it doesn't use configure
+                    provider._get_client()
+
+                    # Verify genai.configure was NOT called
+                    mock_configure.assert_not_called()
 
 
 

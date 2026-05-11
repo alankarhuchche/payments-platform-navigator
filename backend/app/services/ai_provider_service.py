@@ -124,37 +124,36 @@ class VertexGeminiProvider:
         self._model = None
 
     def _get_client(self):
-        """Lazy-load the Gemini client."""
+        """Lazy-load the Gemini client using new google-genai SDK.
+
+        The new SDK automatically picks up GEMINI_API_KEY or GOOGLE_API_KEY
+        from environment variables.
+        """
         if self._client is None:
             try:
-                import google.genai
+                from google import genai
 
+                # Check if API key is available before creating client
                 api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
                 if not api_key:
                     raise AIProviderUnavailable(
                         "GOOGLE_API_KEY or GEMINI_API_KEY environment variable not set"
                     )
 
-                google.genai.configure(api_key=api_key)
-                self._client = google.genai
+                # SDK automatically uses GEMINI_API_KEY or GOOGLE_API_KEY env vars
+                self._client = genai.Client()
+            except AIProviderUnavailable:
+                raise
             except ImportError:
                 raise AIProviderUnavailable(
                     "google-genai package not installed. Install with: pip install google-genai"
                 )
         return self._client
 
-    def _get_model(self):
-        """Lazy-load the Gemini model."""
-        if self._model is None:
-            try:
-                client = self._get_client()
-                self._model = client.GenerativeModel(self.model_name)
-            except ImportError as e:
-                raise AIProviderUnavailable(f"Failed to load Gemini model: {str(e)}")
-        return self._model
-
     def explain(self, context_pack: dict[str, Any]) -> AIProviderResult:
         """Generate an AI-assisted explanation using Vertex Gemini.
+
+        Uses the new google-genai SDK with client.models.generate_content().
 
         Args:
             context_pack: Structured context from context-pack builder
@@ -168,8 +167,11 @@ class VertexGeminiProvider:
             question = context_pack.get("question", "")
             prompt = AIPromptBuilder.build_explanation_prompt(context_pack, question)
 
-            model = self._get_model()
-            response = model.generate_content(prompt)
+            client = self._get_client()
+            response = client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+            )
 
             explanation = response.text if response else ""
 
