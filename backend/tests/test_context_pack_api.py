@@ -3,8 +3,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from ..app.main import app
-from ..app.services.context_pack_service import ContextPackBuilder
+from app.main import app
+from app.services.context_pack_service import ContextPackBuilder
 
 
 client = TestClient(app)
@@ -21,7 +21,7 @@ class TestContextPackBuilder:
         )
 
         assert context_pack["detected_intent"] == "change_safety"
-        assert "payment-validation-service" in context_pack["relevant_services"]
+        assert "svc-payment-validation" in context_pack["relevant_services"]
         assert context_pack["confidence"] > 0.5
         assert "services.yaml" in context_pack["source_files"]
         assert len(context_pack["relevant_flows"]) > 0
@@ -62,7 +62,7 @@ class TestContextPackBuilder:
             "service_explanation",
             "change_safety",
         ]
-        assert "payment-validation-service" in context_pack["relevant_services"]
+        assert "svc-payment-validation" in context_pack["relevant_services"]
         assert context_pack["confidence"] > 0.5
 
     def test_context_pack_includes_source_files(self):
@@ -166,13 +166,13 @@ class TestContextPackAPI:
             "/api/context-pack",
             json={
                 "question": "Tell me more",
-                "service_id": "payment-validation-service",
+                "service_id": "svc-payment-validation",
             },
         )
         assert response.status_code == 200
 
         data = response.json()
-        assert "payment-validation-service" in data["relevant_services"]
+        assert "svc-payment-validation" in data["relevant_services"]
 
     def test_context_pack_endpoint_with_flow_context(self):
         """Test context-pack endpoint with optional flow_id context."""
@@ -180,14 +180,14 @@ class TestContextPackAPI:
             "/api/context-pack",
             json={
                 "question": "Tell me more about this",
-                "flow_id": "outbound-swift-pacs008",
+                "flow_id": "flow-outbound-pacs008",
             },
         )
         assert response.status_code == 200
 
         data = response.json()
         # The flow ID should be in relevant flows or resolved
-        assert "outbound-swift-pacs008" in data["relevant_flows"] or len(
+        assert "flow-outbound-pacs008" in data["relevant_flows"] or len(
             data["relevant_flows"]
         ) > 0
 
