@@ -13,7 +13,12 @@ from __future__ import annotations
 from typing import Any
 
 from ..config import get_settings
-from .ai_provider_service import AIProviderResult, NoopAIProvider
+from .ai_provider_service import (
+    AIProviderResult,
+    AIProviderUnavailable,
+    NoopAIProvider,
+    VertexGeminiProvider,
+)
 
 
 class AIExplainerService:
@@ -36,17 +41,18 @@ class AIExplainerService:
         Returns:
             An AI provider implementation (noop if disabled)
         """
-        # For Phase 9C: Only noop provider is available
-        # Future phases will add Gemini and OpenAI providers
-
         if not self.settings.enable_ai_explanations:
             return NoopAIProvider()
 
         if self.settings.ai_provider == "none" or not self.settings.ai_provider:
             return NoopAIProvider()
 
+        if self.settings.ai_provider == "vertex-gemini":
+            return VertexGeminiProvider(
+                model_name=self.settings.ai_model or "gemini-2.5-flash"
+            )
+
         # If AI is enabled but provider is unknown, use noop
-        # (Future providers will be added here)
         return NoopAIProvider()
 
     def is_available(self) -> bool:
