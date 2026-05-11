@@ -22,6 +22,13 @@ class Settings:
         "http://127.0.0.1:5173",
     ]
 
+    # AI configuration (Phase 9C)
+    enable_ai_explanations = os.getenv("ENABLE_AI_EXPLANATIONS", "false").lower() == "true"
+    ai_provider = os.getenv("AI_PROVIDER", "none").lower()
+    ai_model = os.getenv("AI_MODEL", "none")
+    google_cloud_project = os.getenv("GOOGLE_CLOUD_PROJECT")
+    google_cloud_location = os.getenv("GOOGLE_CLOUD_LOCATION", "europe-west2")
+
 
 @lru_cache
 def get_settings() -> Settings:

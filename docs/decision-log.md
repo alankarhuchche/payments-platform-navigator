@@ -1,5 +1,31 @@
 # Decision Log
 
+## 015 — Add AI provider abstraction with disabled-by-default behaviour
+
+Date: 2026-05-11
+
+Status: Accepted
+
+Decision: Phase 9C will implement a backend AI provider abstraction layer that defines a protocol for pluggable AI providers (Gemini, OpenAI, etc.) without actually integrating any real provider. The abstraction includes configuration support, a NoopAIProvider for disabled-by-default operation, and an AIExplainerService that coordinates provider usage. No external AI calls are made; the layer is purely structural.
+
+Rationale: Before adding real AI providers (Vertex AI, OpenAI), the backend architecture must support pluggable providers in a clean, testable way. The abstraction allows multiple providers to be added in future phases without changing application logic. Disabled-by-default behavior preserves the current deterministic experience and safety guarantees. The structure mirrors production patterns: provider selection based on configuration, graceful error handling, and separation of concerns between backend logic and provider implementation.
+
+Consequences:
+
+- New configuration in `backend/app/config.py`: ENABLE_AI_EXPLANATIONS, AI_PROVIDER, AI_MODEL, GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION (all optional, all have safe defaults).
+- New service: `backend/app/services/ai_provider_service.py` defines AIProviderError, AIProviderUnavailable, AIProviderResult, BaseAIProvider protocol, and NoopAIProvider implementation.
+- New service: `backend/app/services/ai_explainer_service.py` coordinates provider selection and usage based on configuration.
+- NoopAIProvider always returns a safe disabled-state response without calling external services.
+- Configuration supports environment variables for cloud/API keys; no secrets are stored in code.
+- New tests: `tests/test_ai_provider_service.py` (noop provider behavior, no external calls) and `tests/test_ai_explainer_service.py` (configuration, provider selection, disabled-by-default).
+- New `.env.example` at repo root with non-secret placeholder values (ENABLE_AI_EXPLANATIONS=false, AI_PROVIDER=none, etc.).
+- Updated `backend/README.md` with AI configuration documentation.
+- Existing `/api/ask` behavior is unchanged; abstraction is purely additive.
+- No cloud SDKs (google-cloud, openai) are added in Phase 9C; future phases will add them when providers are implemented.
+- No external dependencies are added beyond what already exists.
+
+---
+
 ## 014 — Add context-pack builder before AI provider integration
 
 Date: 2026-05-10

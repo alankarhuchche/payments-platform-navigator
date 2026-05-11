@@ -120,3 +120,47 @@ The backend loads YAML and JSON from the repository-level `data/` folder:
 - `knowledge-health.json`
 
 Required files are validated at startup. Data is read-only for MVP and all examples remain synthetic for public GitHub use.
+
+## AI Configuration (Phase 9C)
+
+AI explanations are optional and disabled by default. The backend includes an AI provider abstraction layer that can be extended with real providers (Gemini, OpenAI) in future phases.
+
+### Configuration
+
+Set these environment variables to enable/configure AI:
+
+```bash
+# Enable AI explanations (default: false)
+ENABLE_AI_EXPLANATIONS=false
+
+# Select AI provider: "none" (disabled), "vertex-ai" (future), "openai" (future)
+# Default: "none"
+AI_PROVIDER=none
+
+# AI model name (only used if provider is configured)
+# Default: "none"
+AI_MODEL=none
+
+# Google Cloud configuration (only needed for Vertex AI provider)
+GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+GOOGLE_CLOUD_LOCATION=europe-west2
+
+# OpenAI configuration (only needed for OpenAI provider)
+# DO NOT commit your API key to git; use secret injection instead
+OPENAI_API_KEY=sk-your-api-key-here
+```
+
+### Default Behaviour
+
+- **AI is disabled by default**: `ENABLE_AI_EXPLANATIONS=false`
+- **No external services are called** unless explicitly enabled
+- **No secrets are required** to run the application
+- **Deterministic backend remains source of truth**: All AI features are optional augmentations
+
+### Provider Abstraction (Phase 9C)
+
+The backend includes:
+- `ai_provider_service.py`: Provider abstraction and NoopAIProvider implementation
+- `ai_explainer_service.py`: Service for coordinating AI provider usage
+
+Future phases will add real provider implementations (Vertex AI, OpenAI) that plug into this abstraction.
