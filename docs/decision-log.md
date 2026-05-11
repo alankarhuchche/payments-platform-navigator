@@ -1,5 +1,36 @@
 # Decision Log
 
+## 016 — Add optional Vertex AI Gemini provider behind disabled-by-default configuration
+
+Date: 2026-05-11
+
+Status: Accepted
+
+Decision: Phase 9D will implement a Vertex AI Gemini provider that integrates with the Phase 9C provider abstraction to offer optional AI-assisted explanations. The implementation is context-pack grounded, uses strict prompting to prevent hallucination, and is disabled by default. AI explanations are requested via an optional "mode" parameter in `/api/ask`. If AI is disabled or the provider fails, the system gracefully falls back to deterministic answers. No OpenAI integration is added in this phase.
+
+Rationale: With the provider abstraction in place (Phase 9C), adding a real provider demonstrates the architecture's viability without requiring all applications to carry unused dependencies. Gemini (via google-genai SDK) is easier to configure with API keys than Vertex AI's full SDKs, making it suitable for local development and Cloud Run environments. Context-pack grounding ensures AI cannot hallucinate beyond retrieved synthetic data. Strict prompting prevents out-of-scope answers. Graceful fallback to deterministic answers preserves the system's reliability if the AI service fails. Disabled-by-default continues to prioritize safety and operational simplicity.
+
+Consequences:
+
+- New dependency: `google-genai==0.4.0` added to `backend/requirements.txt`.
+- New provider implementation: `VertexGeminiProvider` in `backend/app/services/ai_provider_service.py` using google.genai SDK.
+- New prompt service: `backend/app/services/ai_prompt_service.py` with `AIPromptBuilder` for strict system and user prompts that enforce context-only answers.
+- Updated `AIExplainerService` to select `VertexGeminiProvider` when `AI_PROVIDER=vertex-gemini` and ENABLE_AI_EXPLANATIONS=true.
+- Updated `AskRequest` model to support optional `mode` parameter ("deterministic" or "ai_assisted").
+- Updated `/api/ask` endpoint to check mode, build context pack, call AI if enabled, and fall back to deterministic if AI fails.
+- Response includes optional `ai_explanation`, `ai_confidence`, `ai_mode`, and `ai_status` fields when AI is used.
+- New environment variables: `GOOGLE_API_KEY` or `GEMINI_API_KEY` for Gemini authentication (not required unless AI is enabled).
+- Updated `.env.example` with Gemini configuration placeholders (no secrets).
+- New tests: `test_vertex_gemini_provider.py` (provider behavior with mocked API) and `test_ai_assisted_ask.py` (endpoint behavior with AI enabled/disabled).
+- All tests use mocks; no real Gemini calls are made during testing.
+- Updated `backend/README.md` with Gemini configuration, usage examples, and fallback behavior.
+- Existing `/api/ask` with `mode: deterministic` (default) remains unchanged.
+- AI explanations are disabled by default; existing behavior is fully preserved.
+- No cloud SDKs beyond google-genai are added; full Vertex AI integration remains future work.
+- Provider errors do not crash the application; system falls back to deterministic answer with error status.
+
+---
+
 ## 015 — Add AI provider abstraction with disabled-by-default behaviour
 
 Date: 2026-05-11

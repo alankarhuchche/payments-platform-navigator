@@ -8,6 +8,10 @@ from pydantic import BaseModel, Field
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=3, max_length=500)
     context: Optional[Dict[str, Any]] = None
+    mode: Optional[str] = Field(
+        default="deterministic",
+        description="Answer mode: 'deterministic' (default) or 'ai_assisted'",
+    )
 
 
 class ChangeSafetyRequest(BaseModel):

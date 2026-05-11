@@ -59,7 +59,7 @@ The container runs one FastAPI app. It serves `/health`, `/api/*`, and the built
 - `GET /api/glossary`
 - `GET /api/onboarding?role={role}&area={area}`
 - `GET /api/knowledge-health`
-- `POST /api/ask` - Ask the Platform deterministic Q&A
+- `POST /api/ask` - Ask the Platform deterministic or AI-assisted Q&A
 - `POST /api/change-safety-checklist` - Generate change-safety checklist
 - `POST /api/context-pack` - Return structured context pack for a question (Phase 9B)
 
@@ -121,9 +121,9 @@ The backend loads YAML and JSON from the repository-level `data/` folder:
 
 Required files are validated at startup. Data is read-only for MVP and all examples remain synthetic for public GitHub use.
 
-## AI Configuration (Phase 9C)
+## AI Configuration (Phase 9C, 9D)
 
-AI explanations are optional and disabled by default. The backend includes an AI provider abstraction layer that can be extended with real providers (Gemini, OpenAI) in future phases.
+AI explanations are optional and disabled by default. The backend includes an AI provider abstraction layer that supports Vertex AI Gemini (Phase 9D) and is designed for future OpenAI integration.
 
 ### Configuration
 
@@ -133,22 +133,47 @@ Set these environment variables to enable/configure AI:
 # Enable AI explanations (default: false)
 ENABLE_AI_EXPLANATIONS=false
 
-# Select AI provider: "none" (disabled), "vertex-ai" (future), "openai" (future)
+# Select AI provider: "none" (disabled), "vertex-gemini" (Phase 9D), "openai" (future)
 # Default: "none"
 AI_PROVIDER=none
 
 # AI model name (only used if provider is configured)
-# Default: "none"
-AI_MODEL=none
+# For Gemini: gemini-2.5-flash, gemini-2.0-pro, etc.
+# Default: gemini-2.5-flash
+AI_MODEL=gemini-2.5-flash
 
 # Google Cloud configuration (only needed for Vertex AI provider)
 GOOGLE_CLOUD_PROJECT=your-gcp-project-id
 GOOGLE_CLOUD_LOCATION=europe-west2
 
+# Gemini API key (required only for vertex-gemini provider)
+# DO NOT commit your real API key to git; use secret injection instead
+GOOGLE_API_KEY=your-gemini-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
+
 # OpenAI configuration (only needed for OpenAI provider)
 # DO NOT commit your API key to git; use secret injection instead
 OPENAI_API_KEY=sk-your-api-key-here
 ```
+
+### Using AI-Assisted Explanations
+
+To request AI-assisted explanations, set `mode: "ai_assisted"` in the `/api/ask` request:
+
+```json
+{
+  "question": "What should I check before changing Payment Validation Service?",
+  "mode": "ai_assisted"
+}
+```
+
+Response will include:
+- `answer_summary`: Deterministic rule-based answer (always included)
+- `ai_explanation`: AI-assisted explanation (if AI enabled and available)
+- `ai_mode`: "ai_assisted" or omitted if AI not used
+- `ai_status`: Status information about AI provider
+
+**Default mode is "deterministic"** if not specified. AI always falls back to deterministic answer if provider fails.
 
 ### Default Behaviour
 
@@ -156,11 +181,45 @@ OPENAI_API_KEY=sk-your-api-key-here
 - **No external services are called** unless explicitly enabled
 - **No secrets are required** to run the application
 - **Deterministic backend remains source of truth**: All AI features are optional augmentations
+- **API keys are never stored in code**: Use environment variables or secret injection
 
-### Provider Abstraction (Phase 9C)
+### Provider Implementations
 
-The backend includes:
-- `ai_provider_service.py`: Provider abstraction and NoopAIProvider implementation
-- `ai_explainer_service.py`: Service for coordinating AI provider usage
+Phase 9C-9D:
+- `ai_provider_service.py`: Provider abstraction with NoopAIProvider and VertexGeminiProvider
+- `ai_explainer_service.py`: Service for coordinating AI provider selection and usage
+- `ai_prompt_service.py`: Strict prompting to prevent hallucination and out-of-scope answers
 
-Future phases will add real provider implementations (Vertex AI, OpenAI) that plug into this abstraction.
+### Vertex AI Gemini (Phase 9D)
+
+To enable Gemini-assisted explanations:
+
+1. Set environment variables:
+   ```bash
+   ENABLE_AI_EXPLANATIONS=true
+   AI_PROVIDER=vertex-gemini
+   AI_MODEL=gemini-2.5-flash
+   GOOGLE_API_KEY=your-api-key
+   ```
+
+2. Install google-genai (done via requirements.txt):
+   ```bash
+   pip install google-genai==0.4.0
+   ```
+
+3. Request AI mode in `/api/ask`:
+   ```json
+   {
+     "question": "...",
+     "mode": "ai_assisted"
+   }
+   ```
+
+Gemini provider:
+- Sends only context pack (structured synthetic data) to the model
+- Uses strict prompting to prevent general-knowledge leakage
+- Gracefully falls back to deterministic answer if provider fails
+- Never sends raw repo files or unstructured data to the model
+- Confidence score is capped at the context pack confidence
+
+Future phases will add OpenAI provider without changing application logic.
