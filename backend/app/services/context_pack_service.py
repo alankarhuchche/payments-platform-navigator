@@ -131,6 +131,12 @@ class ContextPackBuilder:
         if "change_safety" == intent:
             source_files.update(["change-records.json", "test-coverage.json"])
 
+        if "payment_flow_explanation" == intent:
+            source_files.add("payment-flows.yaml")
+            # For broad flow questions with no specific matches, include sample flows
+            if not matches["flows"] and not relevant_flows:
+                relevant_flows = [flow["id"] for flow in self.data.flows[:3]]
+
         # Deduplicate and sort
         relevant_services = sorted(set(relevant_services))
         relevant_flows = sorted(set(relevant_flows))
